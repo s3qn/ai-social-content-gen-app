@@ -1,35 +1,28 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
+// Phase 1: prove a dev build renders native glass tabs.
+// Four tabs, exact route names and labels. Icons are SF Symbols on iOS; on
+// Android the API falls back to the label (no drawable asset required here).
+// No styling, no theme, no manual glass. The OS provides Liquid Glass on iOS 26.
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
+    <NativeTabs>
+      <NativeTabs.Trigger name="carousel">
+        <Label>Carousel</Label>
+        <Icon sf="rectangle.stack" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="reel">
+        <Label>Reel</Label>
+        <Icon sf="film" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="brainstorm">
+        <Label>Brainstorm</Label>
+        <Icon sf="lightbulb" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="competitors">
+        <Label>Competitors</Label>
+        <Icon sf="person.2" />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

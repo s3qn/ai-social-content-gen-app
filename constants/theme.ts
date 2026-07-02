@@ -27,6 +27,46 @@ export const Colors = {
   },
 };
 
+/**
+ * Design tokens for the app's screens (light-first pro-utility brief).
+ * Additive: does not replace the Colors/Fonts above, which the tab navigator
+ * still depends on. Green and rust are the only colored inks by design.
+ */
+export const Palette = {
+  bg: '#FBFAF7', // warm off-white
+  surface: '#FFFFFF',
+  ink: '#1C1B19', // near-black text
+  muted: '#6B6862', // secondary text
+  line: '#E8E4DC', // hairline borders
+  accent: '#2E5E4E', // deep green: primary action + connected status
+  warn: '#B4552D', // muted rust: attention / not connected
+} as const;
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+} as const;
+
+export const Radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  pill: 999,
+} as const;
+
+export const Type = {
+  display: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
+  heading: { fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
+  body: { fontSize: 15, fontWeight: '400', letterSpacing: 0 },
+  stat: { fontSize: 34, fontWeight: '700', letterSpacing: -0.6 },
+  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
+  caption: { fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
