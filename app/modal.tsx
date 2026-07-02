@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
+import { triggerImpact } from '@/components/haptic-pressable';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
@@ -8,7 +9,7 @@ export default function ModalScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/carousel" dismissTo style={styles.link}>
+      <Link href="/carousel" dismissTo style={styles.link} onPress={triggerImpact}>
         <ThemedText type="link">Go to first tab</ThemedText>
       </Link>
     </ThemedView>
