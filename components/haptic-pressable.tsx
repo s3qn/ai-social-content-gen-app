@@ -1,14 +1,18 @@
 import * as Haptics from 'expo-haptics';
-import { Pressable, PressableProps } from 'react-native';
+import { Platform, Pressable, PressableProps } from 'react-native';
 
 /**
- * Fire a soft tactile "tap" on iOS. No-op on other platforms (and silent in
- * the iOS Simulator — haptics only fire on a physical device). Call this from
- * any button's press handler so touch feedback is consistent across the app.
+ * Fire a tactile "tap" on iOS. No-op on other platforms (and silent in the
+ * iOS Simulator — haptics only fire on a physical device). Call this from any
+ * button's press handler so touch feedback is consistent across the app.
+ *
+ * Guarded with `Platform.OS` (a runtime value) rather than
+ * `process.env.EXPO_OS`, which is only inlined when babel-preset-expo runs and
+ * is otherwise `undefined` — which would silently disable every haptic.
  */
 export function triggerImpact() {
-  if (process.env.EXPO_OS === 'ios') {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  if (Platform.OS === 'ios') {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 }
 
