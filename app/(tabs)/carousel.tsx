@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HapticPressable } from '@/components/haptic-pressable';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 
 // Working title only. Change this one constant to rebrand the wordmark.
@@ -75,7 +76,7 @@ function StatCard({ item }: { item: Stat }) {
 
 function RecentRow({ item }: { item: RecentItem }) {
   return (
-    <Pressable
+    <HapticPressable
       style={({ pressed }) => [styles.recentRow, pressed && styles.pressed]}
       onPress={() => {
         // TODO: open item, later phase
@@ -89,7 +90,7 @@ function RecentRow({ item }: { item: RecentItem }) {
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={Palette.muted} />
-    </Pressable>
+    </HapticPressable>
   );
 }
 
@@ -113,14 +114,14 @@ export default function CarouselScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.wordmark}>{APP_NAME}</Text>
-          <Pressable
+          <HapticPressable
             hitSlop={12}
             style={({ pressed }) => pressed && styles.pressed}
             onPress={() => {
               // TODO: settings nav later
             }}>
             <Ionicons name="settings-outline" size={22} color={Palette.ink} />
-          </Pressable>
+          </HapticPressable>
         </View>
 
         {/* Status strip (signature element) */}
@@ -138,14 +139,14 @@ export default function CarouselScreen() {
         </View>
 
         {/* Primary action */}
-        <Pressable
+        <HapticPressable
           style={({ pressed }) => [styles.primary, pressed && styles.primaryPressed]}
           onPress={() => {
             // TODO: generation flow is a later phase
           }}>
           <Ionicons name="add" size={20} color={Palette.surface} />
           <Text style={styles.primaryLabel}>New carousel</Text>
-        </Pressable>
+        </HapticPressable>
 
         {/* Recent list (tab body) */}
         <Text style={styles.eyebrow}>Recent</Text>
