@@ -1,10 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-// Phase 1: near-empty screen. Centered label only. No content, no styling.
+import { ChatFab } from '@/components/chat-fab';
+
+// Placeholder screen: centered label plus the shared floating chat button.
 export default function ReelScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Reel</Text>
+      <ChatFab />
     </View>
   );
 }

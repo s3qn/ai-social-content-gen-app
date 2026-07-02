@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChatFab } from '@/components/chat-fab';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 
 // Working title only. Change this one constant to rebrand the wordmark.
@@ -155,6 +156,7 @@ export default function CarouselScreen() {
           ))}
         </View>
       </ScrollView>
+      <ChatFab />
     </View>
   );
 }
