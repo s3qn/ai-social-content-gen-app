@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
 import { ChatFab } from '@/components/chat-fab';
 import { HapticPressable } from '@/components/haptic-pressable';
 import { HillFooter } from '@/components/hill-footer';
-import { HillHeader } from '@/components/hill-header';
+import { CURVE_DEPTH, HillHeader } from '@/components/hill-header';
 import { InstagramPill } from '@/components/instagram-pill';
 import { PlanCalendar } from '@/components/plan-calendar';
 import { StatCard } from '@/components/stat-card';
@@ -27,8 +27,9 @@ export default function CarouselScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.backgroundTint }]}>
-      {/* Pinned header — stays fixed while the body scrolls. */}
-      <HillHeader theme={theme}>
+      {/* Pinned header — stays fixed while the body scrolls. zIndex lets its
+          curved center dip overhang above the scrolling content below. */}
+      <HillHeader theme={theme} style={styles.header}>
         <InstagramPill theme={theme} account={account} onPress={toggleConnect} />
         <HapticPressable
           hitSlop={12}
@@ -78,9 +79,14 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: FOOTER_HEIGHT + Spacing.xl,
   },
+  header: {
+    // Paint above the ScrollView so the curved dip overhangs the content.
+    zIndex: 2,
+  },
   body: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
+    // Clear the header's overhanging center dip so STATS isn't tucked under it.
+    paddingTop: CURVE_DEPTH + Spacing.md,
     gap: Spacing.lg,
   },
   footerFixed: {
