@@ -1,18 +1,35 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { AccentPill } from '@/components/accent-pill';
+import {
+  HeaderTitle,
+  PlaceholderCard,
+  SectionHeading,
+  SettingsGear,
+  ThemedScreen,
+} from '@/components/themed-screen';
+import { GLOBAL_TRENDS, RELATED } from '@/constants/mock-screens';
 
-import { ChatFab } from '@/components/chat-fab';
-
-// Placeholder screen: centered label plus the shared floating chat button.
+// The Trends tab belongs to Spark (yellow — Momentum).
 export default function ReelScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Reel</Text>
-      <ChatFab />
-    </View>
+    <ThemedScreen
+      character="spark"
+      header={
+        <>
+          <HeaderTitle title="Trends" />
+          <SettingsGear />
+        </>
+      }>
+      <SectionHeading>GLOBAL TRENDS</SectionHeading>
+      {GLOBAL_TRENDS.map((id) => (
+        <PlaceholderCard key={id} height={72} />
+      ))}
+
+      <SectionHeading>RELATED TO YOU</SectionHeading>
+      {RELATED.map((id) => (
+        <PlaceholderCard key={id} height={120} />
+      ))}
+
+      <AccentPill label="Add as Idea" />
+    </ThemedScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 20 },
-});

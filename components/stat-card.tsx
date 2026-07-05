@@ -1,23 +1,28 @@
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 
-import { CharacterTheme } from '@/constants/characters';
+import { INPUT, PRIMARY, themeIndex } from '@/constants/theme-transition';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 
 type StatCardProps = {
-  theme: CharacterTheme;
   caption: string;
   value: string;
 };
 
 /**
- * A single stat card. Promoted from the inline version in the Home screen so
- * every character's screen can share it. Neutral-on-white by design; a slim
- * top accent bar carries the character color.
+ * A single stat card. Neutral-on-white by design; a slim top accent bar carries
+ * the character color, self-driving from the shared `themeIndex` so it cross-fades
+ * on tab change.
  */
-export function StatCard({ theme, caption, value }: StatCardProps) {
+export function StatCard({ caption, value }: StatCardProps) {
+  'use no memo';
+  const accentStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY),
+  }));
+
   return (
     <View style={styles.card}>
-      <View style={[styles.accentBar, { backgroundColor: theme.accent }]} />
+      <Animated.View style={[styles.accentBar, accentStyle]} />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.caption}>{caption}</Text>
     </View>

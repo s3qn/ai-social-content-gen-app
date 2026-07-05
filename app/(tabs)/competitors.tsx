@@ -1,18 +1,35 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { AccentPill } from '@/components/accent-pill';
+import {
+  HeaderTitle,
+  PlaceholderCard,
+  SectionHeading,
+  SettingsGear,
+  ThemedScreen,
+} from '@/components/themed-screen';
+import { NEW_POSTS, PEERS } from '@/constants/mock-screens';
 
-import { ChatFab } from '@/components/chat-fab';
-
-// Placeholder screen: centered label plus the shared floating chat button.
+// The Peers tab belongs to Statto (blue — Smart Insights).
 export default function CompetitorsScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Competitors</Text>
-      <ChatFab />
-    </View>
+    <ThemedScreen
+      character="statto"
+      header={
+        <>
+          <HeaderTitle title="Peers" />
+          <SettingsGear />
+        </>
+      }>
+      <SectionHeading>MY PEERS</SectionHeading>
+      {PEERS.map((id) => (
+        <PlaceholderCard key={id} height={72} />
+      ))}
+
+      <AccentPill label="Add Competitors" />
+
+      <SectionHeading>NEW POSTS</SectionHeading>
+      {NEW_POSTS.map((id) => (
+        <PlaceholderCard key={id} height={120} />
+      ))}
+    </ThemedScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 20 },
-});

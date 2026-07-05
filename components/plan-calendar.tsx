@@ -1,10 +1,10 @@
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 
-import { CharacterTheme } from '@/constants/characters';
+import { INPUT, ON_HILL, PRIMARY, themeIndex } from '@/constants/theme-transition';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 
 type PlanCalendarProps = {
-  theme: CharacterTheme;
   /** Any date within the month to display. Defaults to today. */
   month?: Date;
   /** Day-of-month numbers that have a planned post. */
@@ -25,11 +25,13 @@ function toWeeks(cells: (number | null)[]): (number | null)[][] {
 }
 
 /**
- * A themeable month grid built from plain JS Date — no calendar library.
- * Marks planned-post days with a dot and highlights today with a filled circle.
- * Non-interactive (v1): day-tap and month paging are future additions.
+ * A month grid built from plain JS Date — no calendar library. Marks planned-post
+ * days with a dot and highlights today with a filled circle; both accents self-drive
+ * from the shared `themeIndex` (one reusable animated style, reused across cells) so
+ * they cross-fade on tab change. Non-interactive (v1).
  */
-export function PlanCalendar({ theme, month, markedDays = [], today }: PlanCalendarProps) {
+export function PlanCalendar({ month, markedDays = [], today }: PlanCalendarProps) {
+  'use no memo';
   const base = month ?? new Date();
   const now = today ?? new Date();
   const year = base.getFullYear();
@@ -48,6 +50,11 @@ export function PlanCalendar({ theme, month, markedDays = [], today }: PlanCalen
   const todayDate = now.getDate();
 
   const title = base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // One animated accent color, reused across the today-circle and every marker.
+  const accentBg = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY),
+  }));
 
   return (
     <View style={styles.card}>
@@ -70,20 +77,17 @@ export function PlanCalendar({ theme, month, markedDays = [], today }: PlanCalen
               <View key={di} style={styles.cell}>
                 {day != null && (
                   <View style={styles.dayInner}>
-                    <View style={[styles.dayCircle, isToday && { backgroundColor: theme.primary }]}>
+                    <Animated.View style={[styles.dayCircle, isToday && accentBg]}>
                       <Text
                         style={[
                           styles.dayNumber,
-                          isToday && { color: theme.onHill, fontWeight: '700' },
+                          isToday && { color: ON_HILL, fontWeight: '700' },
                         ]}>
                         {day}
                       </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.marker,
-                        { backgroundColor: isMarked && !isToday ? theme.accent : 'transparent' },
-                      ]}
+                    </Animated.View>
+                    <Animated.View
+                      style={[styles.marker, isMarked && !isToday && accentBg]}
                     />
                   </View>
                 )}

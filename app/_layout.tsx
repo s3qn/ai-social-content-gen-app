@@ -3,22 +3,46 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { CreateFab } from '@/components/create-fab';
+import { ScreenSwirl } from '@/components/screen-swirl';
+import { SessionProvider, useAuth } from '@/contexts/auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: 'index',
 };
+
+// Must be a child of SessionProvider so the guards can read auth state.
+function RootNavigator() {
+  const { isSignedIn } = useAuth();
+
+  return (
+    <Stack>
+      <Stack.Screen name="index" />
+
+      <Stack.Protected guard={isSignedIn}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Create' }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!isSignedIn}>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack.Protected>
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <SessionProvider>
+        <RootNavigator />
+      </SessionProvider>
+      <StatusBar style="dark" />
+      <ScreenSwirl />
+      <CreateFab />
     </ThemeProvider>
   );
 }

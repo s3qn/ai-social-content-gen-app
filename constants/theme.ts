@@ -40,7 +40,13 @@ export const Palette = {
   line: '#E8E4DC', // hairline borders
   accent: '#2E5E4E', // deep green: primary action + connected status
   warn: '#B4552D', // muted rust: attention / not connected
+  tabIcon: '#838E60', // floating tab bar icon (active)
+  tabIconMuted: 'rgba(131, 142, 96, 0.5)', // #838E60 @ 50% (inactive)
 } as const;
+
+// Bottom padding a scroll/scene reserves to clear the floating tab bar.
+// Use as: paddingBottom = insets.bottom + TAB_BAR_CLEARANCE
+export const TAB_BAR_CLEARANCE = 88; // bar height 64 + rest gap 12 + breathing 12
 
 export const Spacing = {
   xs: 4,

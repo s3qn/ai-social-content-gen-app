@@ -1,18 +1,18 @@
 import { ReactNode } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { interpolateColor, useAnimatedProps } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { CharacterTheme } from '@/constants/characters';
+import { INPUT, PRIMARY, themeIndex } from '@/constants/theme-transition';
 import { Spacing } from '@/constants/theme';
 
-// How far the curved center "tongue" bulges below the solid green block.
-// The solid block fills its full rectangle (corners included) so nothing but
-// green is pinned; only this central dip overhangs into the scroll content.
+// How far the curved center "tongue" bulges below the solid block.
 export const CURVE_DEPTH = 36;
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
 type HillHeaderProps = {
-  theme: CharacterTheme;
   /** Height of the flat portion below the safe-area inset. */
   height?: number;
   /** Extra styles for the header container (e.g. zIndex so the dip overhangs). */
@@ -22,35 +22,41 @@ type HillHeaderProps = {
 };
 
 /**
- * The character-colored header: a solid green block (fully filled, including its
- * bottom corners) with a curved center dip that overhangs below the block into
- * the scroll content. The block's own rectangle is 100% green, so when pinned
- * only green sticks — no page color peeks through the corners.
+ * The character-colored header: a solid block (corners included) with a curved
+ * center dip that overhangs into the scroll content. The fill color self-drives
+ * from the shared `themeIndex`, so it cross-fades when tabs change. A static
+ * white sheen overlay preserves the top-lit gradient depth (animating gradient
+ * <Stop> colors is unreliable on Fabric, so only the solid fill animates).
  */
-export function HillHeader({ theme, height = 132, style, children }: HillHeaderProps) {
+export function HillHeader({ height = 132, style, children }: HillHeaderProps) {
+  'use no memo';
   const insets = useSafeAreaInsets();
-  // solidH = the fully-green pinned rectangle; the tongue bulges CURVE_DEPTH past it.
   const solidH = insets.top + height;
   const total = solidH + CURVE_DEPTH;
+  const d = `M0 0 L100 0 L100 ${solidH} Q50 ${total} 0 ${solidH} Z`;
+
+  const animatedProps = useAnimatedProps(() => ({
+    fill: interpolateColor(themeIndex.value, INPUT, PRIMARY),
+  }));
 
   return (
     <View style={[styles.root, { height: solidH }, style]}>
       <Svg
         width="100%"
         height={total}
-        // Fixed viewBox width keeps the control-point math simple;
-        // preserveAspectRatio="none" stretches it to the real screen width.
         viewBox={`0 0 100 ${total}`}
         preserveAspectRatio="none"
         style={styles.svg}>
         <Defs>
-          <LinearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={theme.hillTop} />
-            <Stop offset="1" stopColor={theme.hillBottom} />
+          <LinearGradient id="hillSheen" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.16} />
+            <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        {/* Full-width green block down to solidH, then a central tongue to `total`. */}
-        <Path d={`M0 0 L100 0 L100 ${solidH} Q50 ${total} 0 ${solidH} Z`} fill="url(#hill)" />
+        {/* Animated solid hue (self-driving). */}
+        <AnimatedPath animatedProps={animatedProps} d={d} />
+        {/* Static top-lit sheen for depth. */}
+        <Path d={d} fill="url(#hillSheen)" />
       </Svg>
       <View style={[styles.content, { paddingTop: insets.top + Spacing.sm, height }]}>
         {children}
@@ -62,7 +68,6 @@ export function HillHeader({ theme, height = 132, style, children }: HillHeaderP
 const styles = StyleSheet.create({
   root: {
     width: '100%',
-    // The curved tongue extends below the block's height; don't clip it.
     overflow: 'visible',
   },
   svg: {
