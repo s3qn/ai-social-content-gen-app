@@ -14,7 +14,12 @@ export const unstable_settings = {
 
 // Must be a child of SessionProvider so the guards can read auth state.
 function RootNavigator() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoading } = useAuth();
+
+  // Hold on the native splash (render nothing) until the persisted session
+  // resolves, so signed-in users don't see a flash of the welcome screen on
+  // cold start before the guards settle.
+  if (isLoading) return null;
 
   return (
     <Stack>

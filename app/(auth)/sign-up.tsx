@@ -11,12 +11,27 @@ import { useAuth } from '@/contexts/auth';
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
 
-  // Template only — captured but never validated or sent.
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await signUp(email.trim(), password);
+    if (result.error) {
+      setError(result.error);
+      setSubmitting(false);
+    }
+    // On success (with email confirmation OFF) the route guard flips and enters
+    // the tabs automatically. If confirmation is ON, no session is created until
+    // the emailed link is clicked — Phase 1 does not add a confirmation screen.
+  };
 
   return (
     <View
@@ -76,8 +91,13 @@ export default function SignUpScreen() {
         </View>
       </View>
 
-      {/* Submit — mock: flips the guard, which auto-enters the tabs. */}
-      <BlackButton label="Create account" variant="solid" onPress={() => signIn()} />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <BlackButton
+        label={submitting ? 'Creating account…' : 'Create account'}
+        variant="solid"
+        onPress={handleSubmit}
+      />
 
       <HapticPressable
         style={({ pressed }) => [styles.switchLink, pressed && styles.pressed]}
@@ -114,6 +134,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
+
+  error: { ...(Type.body as TextStyle), color: Palette.warn, marginTop: -Spacing.md },
 
   switchLink: { alignItems: 'center', paddingVertical: Spacing.sm },
   switchText: { ...(Type.body as TextStyle), color: Palette.muted },

@@ -13,9 +13,23 @@ export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
 
-  // Template only — captured but never validated or sent.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await signIn(email.trim(), password);
+    if (result.error) {
+      setError(result.error);
+      setSubmitting(false);
+    }
+    // On success the route guard flips (isSignedIn), which unmounts this screen
+    // and enters the tabs — no manual navigation needed.
+  };
 
   return (
     <View
@@ -63,8 +77,13 @@ export default function SignInScreen() {
         </View>
       </View>
 
-      {/* Submit — mock: flips the guard, which auto-enters the tabs. */}
-      <BlackButton label="Log in" variant="solid" onPress={() => signIn()} />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <BlackButton
+        label={submitting ? 'Logging in…' : 'Log in'}
+        variant="solid"
+        onPress={handleSubmit}
+      />
 
       <HapticPressable
         style={({ pressed }) => [styles.switchLink, pressed && styles.pressed]}
@@ -101,6 +120,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
+
+  error: { ...(Type.body as TextStyle), color: Palette.warn, marginTop: -Spacing.md },
 
   switchLink: { alignItems: 'center', paddingVertical: Spacing.sm },
   switchText: { ...(Type.body as TextStyle), color: Palette.muted },
