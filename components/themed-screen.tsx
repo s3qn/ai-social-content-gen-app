@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { ReactNode, useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextStyle, View } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -74,14 +74,12 @@ export function HeaderTitle({ title }: { title: string }) {
 
 /** Settings gear for the hill header (right side). White on the hill. */
 export function SettingsGear() {
+  const router = useRouter();
   return (
     <HapticPressable
       hitSlop={12}
       style={({ pressed }) => pressed && styles.pressed}
-      onPress={() => {
-        // Settings nav is a later phase (sign-out will move here); give feedback for now.
-        Alert.alert('Settings', 'Coming soon.');
-      }}>
+      onPress={() => router.push('/settings')}>
       <Ionicons name="settings-outline" size={22} color={ON_HILL} />
     </HapticPressable>
   );

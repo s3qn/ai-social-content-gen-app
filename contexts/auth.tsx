@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 
 type AuthState = {
   isSignedIn: boolean;
-  isLoading: boolean; // true until the initial session check resolves
+  isLoading: boolean; // kept for API compat; always false now (seeded synchronously)
   session: Session | null; // raw Supabase session (for later phases)
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -14,25 +14,46 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+// Supabase persists the session under this key in the (synchronous) expo-sqlite
+// localStorage shim. Key format mirrors supabase-js:
+// `sb-${new URL(url).hostname.split('.')[0]}-auth-token`.
+function storageKey(): string {
+  return `sb-${new URL(process.env.EXPO_PUBLIC_SUPABASE_URL!).hostname.split('.')[0]}-auth-token`;
+}
+
+// Read the persisted session SYNCHRONOUSLY on first render. This is the crux of
+// the native-tab fix: seeding `isSignedIn` correctly up front means the auth
+// guard never flips false→true after mount, so the native tab bar mounts on the
+// very first commit (mounting it a frame late froze its taps).
+function readPersistedSession(): Session | null {
+  try {
+    const raw = (globalThis as { localStorage?: { getItem(k: string): string | null } }).localStorage?.getItem(
+      storageKey(),
+    );
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed.access_token === 'string' ? (parsed as Session) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Real Supabase-backed session. Persistence is handled by supabase-js (backed by
- * the expo-sqlite localStorage shim); we only seed from `getSession()` once and
- * then follow `onAuthStateChange`. We never call getSession/getUser repeatedly or
- * refresh tokens manually — competing with the background refresh is the classic
- * "logged out every restart" bug.
+ * Real Supabase-backed session, seeded synchronously from persisted storage so
+ * the first render already knows the auth state (no async guard flip). We then
+ * revalidate via `getSession()` and follow `onAuthStateChange` in the
+ * background. We never poll getSession/getUser or refresh manually.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(readPersistedSession);
 
   useEffect(() => {
     let mounted = true;
 
-    // Seed state from the persisted session exactly once.
+    // Revalidate/refresh in the background; the synchronous seed already covered
+    // the first paint, so a matching result here is a no-op re-render.
     supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setIsLoading(false);
+      if (mounted) setSession(data.session);
     });
 
     // Track every subsequent change (sign in/out, background refresh) once.
@@ -52,7 +73,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () => ({
       // Single source of truth: derived from `session`, never tracked separately.
       isSignedIn: !!session,
-      isLoading,
+      isLoading: false,
       session,
       signUp: async (email, password) => {
         const { error } = await supabase.auth.signUp({ email, password });
@@ -66,7 +87,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [session, isLoading],
+    [session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

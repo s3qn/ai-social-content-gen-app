@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { memo } from 'react';
 import 'react-native-reanimated';
 
 import { CreateFab } from '@/components/create-fab';
@@ -12,15 +13,13 @@ export const unstable_settings = {
   anchor: 'index',
 };
 
-// Must be a child of SessionProvider so the guards can read auth state.
-function RootNavigator() {
-  const { isSignedIn, isLoading } = useAuth();
-
-  // Hold on the native splash (render nothing) until the persisted session
-  // resolves, so signed-in users don't see a flash of the welcome screen on
-  // cold start before the guards settle.
-  if (isLoading) return null;
-
+// The navigator is memoized on the `isSignedIn` BOOLEAN, not the whole auth
+// value. Supabase emits a few session updates at startup (INITIAL_SESSION,
+// token refresh) that change the context object without changing sign-in state;
+// without this memo those would re-render the Stack and re-sync the native tab
+// bar, which is exactly the kind of churn that leaves its taps frozen. Keyed on
+// the boolean, the tab subtree stays put unless the user actually signs in/out.
+const AuthedStack = memo(function AuthedStack({ isSignedIn }: { isSignedIn: boolean }) {
   return (
     <Stack>
       <Stack.Screen name="index" />
@@ -28,6 +27,7 @@ function RootNavigator() {
       <Stack.Protected guard={isSignedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Create' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack.Protected>
 
       <Stack.Protected guard={!isSignedIn}>
@@ -35,6 +35,15 @@ function RootNavigator() {
       </Stack.Protected>
     </Stack>
   );
+});
+
+// Must be a child of SessionProvider so it can read auth state. `isSignedIn` is
+// seeded synchronously (see contexts/auth.tsx), so it's already correct on the
+// first render — the guard never flips after mount, and the native tab bar
+// mounts on the first commit.
+function RootNavigator() {
+  const { isSignedIn } = useAuth();
+  return <AuthedStack isSignedIn={isSignedIn} />;
 }
 
 export default function RootLayout() {
