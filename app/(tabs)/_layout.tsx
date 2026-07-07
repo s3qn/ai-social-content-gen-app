@@ -1,34 +1,58 @@
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 
 import { Palette } from '@/constants/theme';
 
-// Native OS tab bar (Liquid Glass on iOS 26 dev builds; renders in Expo Go too).
-// Relabelled Home/Peers/Ideas/Trends; route files unchanged. Icons tinted #838E60.
+// JS tab bar (React Navigation, via expo-router's <Tabs>). We used the native
+// tab bar (unstable-native-tabs) but it's alpha and its native tab-switching
+// doesn't function in Expo Go — the bar renders yet taps never fire. JS tabs
+// work reliably in Expo Go, our required runtime. Same route names / labels /
+// tint as before; icons mapped from SF Symbols to Ionicons.
 export default function TabLayout() {
-  // React Compiler freezes this repo's interactive components (see GlowButton);
-  // NativeTabs feeds its Trigger/Icon/Label children in as config, which the
-  // compiler's memoization can break — opt this host out so taps register.
   'use no memo';
   return (
-    <NativeTabs
-      tintColor={Palette.tabIcon}
-      iconColor={{ default: Palette.tabIconMuted, selected: Palette.tabIcon }}>
-      <NativeTabs.Trigger name="home">
-        <Label>Home</Label>
-        <Icon sf={{ default: 'house', selected: 'house.fill' }} />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="competitors">
-        <Label>Peers</Label>
-        <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="brainstorm">
-        <Label>Ideas</Label>
-        <Icon sf={{ default: 'lightbulb', selected: 'lightbulb.fill' }} />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="reel">
-        <Label>Trends</Label>
-        <Icon sf={{ default: 'flame', selected: 'flame.fill' }} />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Palette.tabIcon,
+        tabBarInactiveTintColor: Palette.tabIconMuted,
+      }}>
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="competitors"
+        options={{
+          title: 'Peers',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="brainstorm"
+        options={{
+          title: 'Ideas',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'bulb' : 'bulb-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="reel"
+        options={{
+          title: 'Trends',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'flame' : 'flame-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
