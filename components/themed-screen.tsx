@@ -58,7 +58,7 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
         <View style={styles.body}>{children}</View>
       </ScrollView>
 
-      <View style={styles.footerFixed} pointerEvents="none">
+      <View style={styles.footerFixed}>
         <HillFooter height={FOOTER_HEIGHT} />
       </View>
 
@@ -137,5 +137,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    // Prop form of pointerEvents is unreliable on the New Architecture (Fabric);
+    // set it in style so the footer never intercepts native tab-bar taps.
+    pointerEvents: 'none',
   },
 });

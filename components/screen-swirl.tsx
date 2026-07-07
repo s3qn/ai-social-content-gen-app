@@ -146,7 +146,7 @@ export function ScreenSwirl() {
   const ringGeom = { x: inset, y: inset, width: rw, height: rh, rx: R, ry: R, fill: 'none' as const };
 
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fadeStyle]}>
+    <Animated.View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, fadeStyle]}>
       <Svg width={W} height={H}>
         {/* (A) Dim static full-ring base — fades in at swirl start, persists under the arc */}
         <AnimatedG animatedProps={baseGroupProps}>

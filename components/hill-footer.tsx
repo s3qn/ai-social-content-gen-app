@@ -37,7 +37,7 @@ function FooterLayer({ index, height }: { index: number; height: number }) {
  */
 export function HillFooter({ height = 150 }: { height?: number }) {
   return (
-    <View style={[styles.root, { height }]} pointerEvents="none">
+    <View style={[styles.root, { height }]}>
       <Svg
         width="100%"
         height={height}
@@ -55,5 +55,7 @@ export function HillFooter({ height = 150 }: { height?: number }) {
 const styles = StyleSheet.create({
   root: {
     width: '100%',
+    // Style form of pointerEvents (prop form is unreliable on Fabric/New Arch).
+    pointerEvents: 'none',
   },
 });
