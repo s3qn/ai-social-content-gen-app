@@ -40,6 +40,7 @@ type Props = {
 };
 
 export function GlowButton({ label, onPress, children }: Props) {
+  'use no memo';
   const [size, setSize] = useState({ w: 0, h: 0 });
   // Square sized to the button's diagonal so the rotating gradient always
   // covers the corners, whatever the button's dimensions.
