@@ -6,7 +6,7 @@ import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { triggerImpact } from '@/components/haptic-pressable';
-import { Palette } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 // --- Tuning knobs: nudge these on-device to sit above the native tab bar, right side ---
 const SIZE = 52; // circle diameter
@@ -36,7 +36,9 @@ export function CreateFab() {
   const router = useRouter();
   const segments = useSegments();
   const reduceTransparency = useReduceTransparency();
+  const { scheme, palette } = useTheme();
   const useSolid = Platform.OS === 'android' || reduceTransparency;
+  const isDark = scheme === 'dark';
 
   if (segments[0] !== '(tabs)') return null;
 
@@ -54,13 +56,22 @@ export function CreateFab() {
         { right: RIGHT, bottom: insets.bottom + BOTTOM_GAP },
         pressed && styles.pressed,
       ]}>
-      <View style={styles.glass}>
+      <View style={[styles.glass, { borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.5)' }]}>
         {useSolid ? (
-          <View style={[StyleSheet.absoluteFill, styles.solid]} />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: isDark ? 'rgba(30,28,26,0.92)' : 'rgba(251,250,247,0.92)' },
+            ]}
+          />
         ) : (
-          <BlurView tint="systemChromeMaterialLight" intensity={65} style={StyleSheet.absoluteFill} />
+          <BlurView
+            tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+            intensity={65}
+            style={StyleSheet.absoluteFill}
+          />
         )}
-        <Ionicons name="add" size={28} color={Palette.tabIcon} />
+        <Ionicons name="add" size={28} color={palette.tabIcon} />
       </View>
     </Pressable>
   );
@@ -85,10 +96,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  solid: {
-    backgroundColor: 'rgba(251,250,247,0.92)',
+    // borderColor set inline (theme-aware).
   },
   pressed: {
     opacity: 0.9,

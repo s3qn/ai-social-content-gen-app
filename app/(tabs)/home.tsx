@@ -5,14 +5,16 @@ import { InstagramPill } from '@/components/instagram-pill';
 import { PlanCalendar } from '@/components/plan-calendar';
 import { StatCard } from '@/components/stat-card';
 import { SectionHeading, SettingsGear, ThemedScreen } from '@/components/themed-screen';
-import { CHARACTERS } from '@/constants/characters';
+import { charactersFor } from '@/constants/characters';
 import { HOME_STATS, MARKED_DAYS, MOCK_INSTAGRAM } from '@/constants/mock-account';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 // The Home tab belongs to Virlo (green — Viral Growth).
-const theme = CHARACTERS.virlo;
-
 export default function HomeScreen() {
+  const { scheme } = useTheme();
+  // Character theme (drives the InstagramPill hue) follows light/dark.
+  const theme = charactersFor(scheme).virlo;
   // Instagram connection is a visual mock: tap the pill to toggle connect state.
   const [account, setAccount] = useState<typeof MOCK_INSTAGRAM | null>(MOCK_INSTAGRAM);
   const toggleConnect = () => setAccount((prev) => (prev ? null : MOCK_INSTAGRAM));

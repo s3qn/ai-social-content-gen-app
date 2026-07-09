@@ -14,7 +14,7 @@
  */
 import { Easing, makeMutable, withTiming } from 'react-native-reanimated';
 
-import { CHARACTERS, CharacterId } from './characters';
+import { CHARACTERS, CHARACTERS_DARK, CharacterId, CharacterTheme } from './characters';
 
 // Tab order === character order.
 export const CHAR_ORDER: CharacterId[] = ['virlo', 'statto', 'enga', 'spark'];
@@ -22,19 +22,37 @@ export const CHAR_ORDER: CharacterId[] = ['virlo', 'statto', 'enga', 'spark'];
 // Interpolation input range, one stop per character.
 export const INPUT = CHAR_ORDER.map((_, i) => i);
 
-// Color ramps (plain string[] — safely captured inside worklets). Derived from
-// CHARACTERS so the registry stays the single source of truth. Note each
-// character has primary === accent === hillBottom === footerHills[1], and
-// footerHills === [hillTop, hillBottom, dark].
-export const PRIMARY = CHAR_ORDER.map((id) => CHARACTERS[id].primary);
-export const HILL_TOP = CHAR_ORDER.map((id) => CHARACTERS[id].hillTop);
-export const BG_TINT = CHAR_ORDER.map((id) => CHARACTERS[id].backgroundTint);
-export const FOOTER_DARK = CHAR_ORDER.map((id) => CHARACTERS[id].footerHills[2]);
+// A frozen set of color ramps (plain string[] — safely captured inside
+// worklets), one per scheme. Note each character has primary === accent ===
+// hillBottom === footerHills[1], and footerHills === [hillTop, hillBottom, dark].
+export type Ramps = {
+  PRIMARY: string[];
+  HILL_TOP: string[];
+  BG_TINT: string[];
+  FOOTER_DARK: string[];
+  /** Footer layers back-to-front: [hillTop, primary, dark]. */
+  FOOTER_RAMPS: string[][];
+};
 
-// Footer layers back-to-front: [hillTop, primary, dark].
-export const FOOTER_RAMPS = [HILL_TOP, PRIMARY, FOOTER_DARK];
+function buildRamps(reg: Record<CharacterId, CharacterTheme>): Ramps {
+  const PRIMARY = CHAR_ORDER.map((id) => reg[id].primary);
+  const HILL_TOP = CHAR_ORDER.map((id) => reg[id].hillTop);
+  const BG_TINT = CHAR_ORDER.map((id) => reg[id].backgroundTint);
+  const FOOTER_DARK = CHAR_ORDER.map((id) => reg[id].footerHills[2]);
+  return { PRIMARY, HILL_TOP, BG_TINT, FOOTER_DARK, FOOTER_RAMPS: [HILL_TOP, PRIMARY, FOOTER_DARK] };
+}
 
-// On-hill text/icon color is white for every character.
+// Both ramp sets are derived once at module load and kept as frozen arrays. The
+// animated surfaces select the active set by scheme at render time and pass
+// `scheme` as an explicit useAnimatedStyle/Props dependency, so a theme switch
+// re-derives the worklet and snaps to the new set (theme switches don't tween
+// light↔dark; only tab changes cross-fade, driven by `themeIndex`).
+export const RAMPS: Record<'light' | 'dark', Ramps> = {
+  light: buildRamps(CHARACTERS),
+  dark: buildRamps(CHARACTERS_DARK),
+};
+
+// On-hill text/icon color is white for every character, in both schemes.
 export const ON_HILL = '#FFFFFF';
 
 // The animated driver. Starts on Home (index 0).

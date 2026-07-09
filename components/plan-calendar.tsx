@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 
-import { INPUT, ON_HILL, PRIMARY, themeIndex } from '@/constants/theme-transition';
-import { Palette, Radius, Spacing, Type } from '@/constants/theme';
+import { INPUT, ON_HILL, RAMPS, themeIndex } from '@/constants/theme-transition';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 type PlanCalendarProps = {
   /** Any date within the month to display. Defaults to today. */
@@ -32,6 +34,9 @@ function toWeeks(cells: (number | null)[]): (number | null)[][] {
  */
 export function PlanCalendar({ month, markedDays = [], today }: PlanCalendarProps) {
   'use no memo';
+  const { scheme, palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const { PRIMARY } = RAMPS[scheme];
   const base = month ?? new Date();
   const now = today ?? new Date();
   const year = base.getFullYear();
@@ -52,9 +57,10 @@ export function PlanCalendar({ month, markedDays = [], today }: PlanCalendarProp
   const title = base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   // One animated accent color, reused across the today-circle and every marker.
-  const accentBg = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY),
-  }));
+  const accentBg = useAnimatedStyle(
+    () => ({ backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY) }),
+    [scheme],
+  );
 
   return (
     <View style={styles.card}>
@@ -102,51 +108,52 @@ export function PlanCalendar({ month, markedDays = [], today }: PlanCalendarProp
 
 const CIRCLE = 30;
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Palette.surface,
-    borderColor: Palette.line,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.xs,
-  },
-  title: {
-    ...(Type.heading as TextStyle),
-    color: Palette.ink,
-    marginBottom: Spacing.sm,
-  },
-  weekRow: {
-    flexDirection: 'row',
-  },
-  cell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  weekday: {
-    ...(Type.caption as TextStyle),
-    color: Palette.muted,
-    paddingVertical: Spacing.xs,
-  },
-  dayInner: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  dayCircle: {
-    width: CIRCLE,
-    height: CIRCLE,
-    borderRadius: CIRCLE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayNumber: {
-    ...(Type.body as TextStyle),
-    color: Palette.ink,
-  },
-  marker: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 2,
-  },
-});
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: palette.surface,
+      borderColor: palette.line,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: Radius.lg,
+      padding: Spacing.lg,
+      gap: Spacing.xs,
+    },
+    title: {
+      ...(Type.heading as TextStyle),
+      color: palette.ink,
+      marginBottom: Spacing.sm,
+    },
+    weekRow: {
+      flexDirection: 'row',
+    },
+    cell: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    weekday: {
+      ...(Type.caption as TextStyle),
+      color: palette.muted,
+      paddingVertical: Spacing.xs,
+    },
+    dayInner: {
+      alignItems: 'center',
+      paddingVertical: Spacing.xs,
+    },
+    dayCircle: {
+      width: CIRCLE,
+      height: CIRCLE,
+      borderRadius: CIRCLE / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayNumber: {
+      ...(Type.body as TextStyle),
+      color: palette.ink,
+    },
+    marker: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      marginTop: 2,
+    },
+  });

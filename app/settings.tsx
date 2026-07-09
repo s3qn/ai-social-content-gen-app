@@ -1,25 +1,104 @@
-import { StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { BlackButton } from '@/components/black-button';
-import { Palette, Spacing } from '@/constants/theme';
+import { HapticPressable } from '@/components/haptic-pressable';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth';
+import { ThemeMode, useTheme } from '@/contexts/theme';
 
-// Minimal settings screen, pushed from the header gear. Just log out for now
-// (testing); real settings land here in a later phase. On sign-out the auth
-// guard flips and the navigator redirects back to the welcome flow.
+const MODES: { value: ThemeMode; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+];
+
+/**
+ * Settings screen, pushed from the header gear. Appearance selector (Light /
+ * Dark / System) + Log out. On sign-out the auth guard flips and the navigator
+ * redirects back to the welcome flow.
+ */
 export default function SettingsScreen() {
   const { signOut } = useAuth();
+  const { mode, palette, setMode } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+
   return (
     <View style={styles.container}>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Appearance</Text>
+        <View style={styles.segment}>
+          {MODES.map((m) => {
+            const selected = mode === m.value;
+            return (
+              <HapticPressable
+                key={m.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setMode(m.value)}
+                style={({ pressed }) => [
+                  styles.segmentItem,
+                  selected && styles.segmentItemActive,
+                  pressed && !selected && styles.segmentItemPressed,
+                ]}>
+                <Text style={[styles.segmentText, selected && styles.segmentTextActive]}>
+                  {m.label}
+                </Text>
+              </HapticPressable>
+            );
+          })}
+        </View>
+      </View>
+
       <BlackButton label="Log out" onPress={() => signOut()} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Palette.bg,
-    padding: Spacing.xl,
-  },
-});
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.bg,
+      padding: Spacing.xl,
+      gap: Spacing.xl,
+    },
+    section: {
+      gap: Spacing.sm,
+    },
+    sectionLabel: {
+      ...(Type.caption as TextStyle),
+      color: palette.muted,
+    },
+    // Track: a rounded row that holds the three segments.
+    segment: {
+      flexDirection: 'row',
+      backgroundColor: palette.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.line,
+      borderRadius: Radius.md,
+      padding: Spacing.xs,
+      gap: Spacing.xs,
+    },
+    segmentItem: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: Spacing.md,
+      borderRadius: Radius.sm,
+    },
+    segmentItemActive: {
+      backgroundColor: palette.accent,
+    },
+    segmentItemPressed: {
+      opacity: 0.6,
+    },
+    segmentText: {
+      ...(Type.body as TextStyle),
+      color: palette.ink,
+      fontWeight: '600',
+    },
+    segmentTextActive: {
+      color: palette.surface,
+    },
+  });

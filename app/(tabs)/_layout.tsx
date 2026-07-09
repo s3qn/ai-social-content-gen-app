@@ -1,14 +1,17 @@
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { Palette } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 // Native OS tab bar (Liquid Glass on iOS 26 dev builds; renders in Expo Go too).
-// Relabelled Home/Peers/Ideas/Trends; route files unchanged. Icons tinted #838E60.
+// Relabelled Home/Peers/Ideas/Trends; route files unchanged. Icon tint follows
+// the active theme (updates as a prop change — the bar is not remounted, so the
+// native-tab-freeze fix is unaffected).
 export default function TabLayout() {
+  const { palette } = useTheme();
   return (
     <NativeTabs
-      tintColor={Palette.tabIcon}
-      iconColor={{ default: Palette.tabIconMuted, selected: Palette.tabIcon }}>
+      tintColor={palette.tabIcon}
+      iconColor={{ default: palette.tabIconMuted, selected: palette.tabIcon }}>
       <NativeTabs.Trigger name="home">
         <Label>Home</Label>
         <Icon sf={{ default: 'house', selected: 'house.fill' }} />

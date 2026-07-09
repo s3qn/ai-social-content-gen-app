@@ -13,7 +13,7 @@
  * Only chromatic roles live here. Neutral tokens (ink/muted/line/surface) come
  * from `theme.ts` so this file never duplicates the neutral design layer.
  */
-import { Palette } from './theme';
+import { darkPalette, Palette } from './theme';
 
 export type CharacterId = 'virlo' | 'statto' | 'enga' | 'spark';
 
@@ -103,3 +103,74 @@ export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
     footerHills: ['#F2BE3E', '#E5A81E', '#B48212'],
   },
 };
+
+/**
+ * Dark-mode variants of each character. Same shape/keys as the light registry,
+ * but with darker hills/background-tint/footers and neutrals sourced from
+ * `darkPalette`. The colored hills stay vivid enough that white on-hill text
+ * still reads, so `onHill`/`onHillMuted` are unchanged. Selected reactively by
+ * `useTheme().scheme` wherever a character theme (or its animated ramp) is used.
+ */
+export const CHARACTERS_DARK: Record<CharacterId, CharacterTheme> = {
+  virlo: {
+    id: 'virlo',
+    name: 'Virlo',
+    tagline: 'Viral Growth',
+    primary: '#3E9A45',
+    hillTop: '#2C6E31',
+    hillBottom: '#1F4F23',
+    backgroundTint: '#0E1A0F',
+    surface: darkPalette.surface,
+    onHill: '#FFFFFF',
+    onHillMuted: 'rgba(255,255,255,0.82)',
+    accent: '#3E9A45',
+    footerHills: ['#2C6E31', '#1F4F23', '#122F15'],
+  },
+  statto: {
+    id: 'statto',
+    name: 'Statto',
+    tagline: 'Smart Insights',
+    primary: '#3573C8',
+    hillTop: '#274F86',
+    hillBottom: '#1B3A63',
+    backgroundTint: '#0C1420',
+    surface: darkPalette.surface,
+    onHill: '#FFFFFF',
+    onHillMuted: 'rgba(255,255,255,0.82)',
+    accent: '#3573C8',
+    footerHills: ['#274F86', '#1B3A63', '#0F2039'],
+  },
+  enga: {
+    id: 'enga',
+    name: 'Enga',
+    tagline: 'Engagement',
+    primary: '#7A4DAB',
+    hillTop: '#5E3A85',
+    hillBottom: '#472C64',
+    backgroundTint: '#150E1D',
+    surface: darkPalette.surface,
+    onHill: '#FFFFFF',
+    onHillMuted: 'rgba(255,255,255,0.82)',
+    accent: '#7A4DAB',
+    footerHills: ['#5E3A85', '#472C64', '#2C1B40'],
+  },
+  spark: {
+    id: 'spark',
+    name: 'Spark',
+    tagline: 'Momentum',
+    primary: '#D9A02A',
+    hillTop: '#A6791C',
+    hillBottom: '#7D5B14',
+    backgroundTint: '#1A1405',
+    surface: darkPalette.surface,
+    onHill: '#FFFFFF',
+    onHillMuted: 'rgba(255,255,255,0.86)',
+    accent: '#D9A02A',
+    footerHills: ['#A6791C', '#7D5B14', '#4F3A0D'],
+  },
+};
+
+/** Pick the character registry for the active scheme. */
+export function charactersFor(scheme: 'light' | 'dark'): Record<CharacterId, CharacterTheme> {
+  return scheme === 'dark' ? CHARACTERS_DARK : CHARACTERS;
+}

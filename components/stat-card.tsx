@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 
-import { INPUT, PRIMARY, themeIndex } from '@/constants/theme-transition';
-import { Palette, Radius, Spacing, Type } from '@/constants/theme';
+import { INPUT, RAMPS, themeIndex } from '@/constants/theme-transition';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 type StatCardProps = {
   caption: string;
@@ -10,15 +12,19 @@ type StatCardProps = {
 };
 
 /**
- * A single stat card. Neutral-on-white by design; a slim top accent bar carries
- * the character color, self-driving from the shared `themeIndex` so it cross-fades
- * on tab change.
+ * A single stat card. Neutral card surface (theme-aware) with a slim top accent
+ * bar that carries the character color, self-driving from the shared `themeIndex`
+ * so it cross-fades on tab change and swaps ramp on light↔dark.
  */
 export function StatCard({ caption, value }: StatCardProps) {
   'use no memo';
-  const accentStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY),
-  }));
+  const { scheme, palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const { PRIMARY } = RAMPS[scheme];
+  const accentStyle = useAnimatedStyle(
+    () => ({ backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY) }),
+    [scheme],
+  );
 
   return (
     <View style={styles.card}>
@@ -29,31 +35,32 @@ export function StatCard({ caption, value }: StatCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: Palette.surface,
-    borderColor: Palette.line,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
-    gap: Spacing.xs,
-    overflow: 'hidden',
-  },
-  accentBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-  },
-  value: {
-    ...(Type.stat as TextStyle),
-    color: Palette.ink,
-    marginTop: Spacing.xs,
-  },
-  caption: {
-    ...(Type.caption as TextStyle),
-    color: Palette.muted,
-  },
-});
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    card: {
+      flex: 1,
+      backgroundColor: palette.surface,
+      borderColor: palette.line,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: Radius.md,
+      padding: Spacing.lg,
+      gap: Spacing.xs,
+      overflow: 'hidden',
+    },
+    accentBar: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+    },
+    value: {
+      ...(Type.stat as TextStyle),
+      color: palette.ink,
+      marginTop: Spacing.xs,
+    },
+    caption: {
+      ...(Type.caption as TextStyle),
+      color: palette.muted,
+    },
+  });

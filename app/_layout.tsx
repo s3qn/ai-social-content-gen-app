@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { memo } from 'react';
@@ -7,7 +7,7 @@ import 'react-native-reanimated';
 import { CreateFab } from '@/components/create-fab';
 import { ScreenSwirl } from '@/components/screen-swirl';
 import { SessionProvider, useAuth } from '@/contexts/auth';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeProvider, useTheme } from '@/contexts/theme';
 
 export const unstable_settings = {
   anchor: 'index',
@@ -46,17 +46,30 @@ function RootNavigator() {
   return <AuthedStack isSignedIn={isSignedIn} />;
 }
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
+// Reads the resolved scheme (seeded synchronously by ThemeProvider, so the first
+// paint is already correct — no light→dark flash) and drives React Navigation's
+// theme + the system status-bar style off it. The animated character surfaces
+// select their dark/light color ramps reactively from the same `scheme`, so a
+// theme switch recolors the whole app without remounting the navigator (which
+// would refreeze the native tab bar / reset navigation state).
+function ThemedRoot() {
+  const { scheme } = useTheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <SessionProvider>
         <RootNavigator />
       </SessionProvider>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ScreenSwirl />
       <CreateFab />
+    </NavThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <ThemedRoot />
     </ThemeProvider>
   );
 }

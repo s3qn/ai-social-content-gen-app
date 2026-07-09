@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
 
 import { HapticPressable } from '@/components/haptic-pressable';
-import { Palette, Radius, Spacing, Type } from '@/constants/theme';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 type Props = {
   label: string;
@@ -9,9 +11,12 @@ type Props = {
   variant?: 'solid' | 'outline';
 };
 
-// Plain black button used across the onboarding screens. `solid` = filled
-// near-black pill; `outline` = transparent with a near-black hairline border.
+// Primary button used across the onboarding + settings screens. `solid` = filled
+// ink pill (near-white label); `outline` = surface fill with an ink hairline
+// border. Colors follow the active theme.
 export function BlackButton({ label, onPress, variant = 'solid' }: Props) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const isSolid = variant === 'solid';
   return (
     <HapticPressable
@@ -26,32 +31,33 @@ export function BlackButton({ label, onPress, variant = 'solid' }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-  } as ViewStyle,
-  solid: {
-    backgroundColor: Palette.ink,
-  },
-  outline: {
-    backgroundColor: Palette.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Palette.ink,
-  },
-  label: {
-    ...(Type.body as TextStyle),
-    fontWeight: '600',
-  },
-  solidLabel: {
-    color: Palette.surface,
-  },
-  outlineLabel: {
-    color: Palette.ink,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-});
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    base: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: Spacing.lg,
+      borderRadius: Radius.md,
+    } as ViewStyle,
+    solid: {
+      backgroundColor: palette.ink,
+    },
+    outline: {
+      backgroundColor: palette.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.ink,
+    },
+    label: {
+      ...(Type.body as TextStyle),
+      fontWeight: '600',
+    },
+    solidLabel: {
+      color: palette.surface,
+    },
+    outlineLabel: {
+      color: palette.ink,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+  });

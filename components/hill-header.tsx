@@ -4,8 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { interpolateColor, useAnimatedProps } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { INPUT, PRIMARY, themeIndex } from '@/constants/theme-transition';
+import { INPUT, RAMPS, themeIndex } from '@/constants/theme-transition';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 // How far the curved center "tongue" bulges below the solid block.
 export const CURVE_DEPTH = 36;
@@ -30,14 +31,19 @@ type HillHeaderProps = {
  */
 export function HillHeader({ height = 132, style, children }: HillHeaderProps) {
   'use no memo';
+  const { scheme } = useTheme();
+  const { PRIMARY } = RAMPS[scheme];
   const insets = useSafeAreaInsets();
   const solidH = insets.top + height;
   const total = solidH + CURVE_DEPTH;
   const d = `M0 0 L100 0 L100 ${solidH} Q50 ${total} 0 ${solidH} Z`;
 
-  const animatedProps = useAnimatedProps(() => ({
-    fill: interpolateColor(themeIndex.value, INPUT, PRIMARY),
-  }));
+  // `scheme` is an explicit dependency so switching light↔dark re-derives the
+  // worklet with the new ramp (snaps; tab changes still cross-fade via themeIndex).
+  const animatedProps = useAnimatedProps(
+    () => ({ fill: interpolateColor(themeIndex.value, INPUT, PRIMARY) }),
+    [scheme],
+  );
 
   return (
     <View style={[styles.root, { height: solidH }, style]}>

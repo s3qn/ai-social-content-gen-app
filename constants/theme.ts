@@ -28,11 +28,15 @@ export const Colors = {
 };
 
 /**
- * Design tokens for the app's screens (light-first pro-utility brief).
+ * Design tokens for the app's screens (pro-utility brief). Split into a light
+ * and a dark palette with identical keys so a single reactive `useTheme().palette`
+ * can swap the whole neutral layer at runtime. Green and rust are the only
+ * colored inks by design.
+ *
  * Additive: does not replace the Colors/Fonts above, which the tab navigator
- * still depends on. Green and rust are the only colored inks by design.
+ * still depends on.
  */
-export const Palette = {
+export const lightPalette = {
   bg: '#FBFAF7', // warm off-white
   surface: '#FFFFFF',
   ink: '#1C1B19', // near-black text
@@ -43,6 +47,28 @@ export const Palette = {
   tabIcon: '#838E60', // floating tab bar icon (active)
   tabIconMuted: 'rgba(131, 142, 96, 0.5)', // #838E60 @ 50% (inactive)
 } as const;
+
+/** The active palette shape — same keys as light, values differ by scheme. */
+export type AppPalette = Record<keyof typeof lightPalette, string>;
+
+export const darkPalette: AppPalette = {
+  bg: '#121110', // near-black, faintly warm
+  surface: '#1E1C1A', // dark-grey card
+  ink: '#F3F1EC', // near-white text
+  muted: '#9C978E', // lighter secondary text
+  line: '#302D29', // subtle hairline on dark
+  accent: '#4F9E7E', // slightly brighter green for dark surfaces
+  warn: '#D07C4E', // brighter rust for dark surfaces
+  tabIcon: '#A6B27C', // brighter tab icon (active) on dark bar
+  tabIconMuted: 'rgba(166, 178, 124, 0.5)', // #A6B27C @ 50% (inactive)
+};
+
+/**
+ * Backward-compat alias = the light palette. Kept so untouched boilerplate that
+ * still imports the static `Palette` (e.g. app/modal.tsx) keeps compiling.
+ * Theme-aware code should read `useTheme().palette` instead.
+ */
+export const Palette = lightPalette;
 
 // Bottom padding a scroll/scene reserves to clear the floating tab bar.
 // Use as: paddingBottom = insets.bottom + TAB_BAR_CLEARANCE

@@ -1,17 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, TextStyle, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
-import { Palette, Radius, Spacing, Type } from '@/constants/theme';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth';
+import { useTheme } from '@/contexts/theme';
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +44,7 @@ export default function SignInScreen() {
         hitSlop={12}
         style={({ pressed }) => pressed && styles.pressed}
         onPress={() => router.back()}>
-        <Ionicons name="chevron-back" size={26} color={Palette.ink} />
+        <Ionicons name="chevron-back" size={26} color={palette.ink} />
       </HapticPressable>
 
       <View style={styles.head}>
@@ -57,7 +60,7 @@ export default function SignInScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor={Palette.muted}
+            placeholderTextColor={palette.muted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -71,7 +74,7 @@ export default function SignInScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
-            placeholderTextColor={Palette.muted}
+            placeholderTextColor={palette.muted}
             secureTextEntry
           />
         </View>
@@ -96,36 +99,37 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Palette.bg,
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.xl,
-  },
-  head: { gap: Spacing.xs },
-  title: { ...(Type.display as TextStyle), color: Palette.ink },
-  subtitle: { ...(Type.body as TextStyle), color: Palette.muted },
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: palette.bg,
+      paddingHorizontal: Spacing.xl,
+      gap: Spacing.xl,
+    },
+    head: { gap: Spacing.xs },
+    title: { ...(Type.display as TextStyle), color: palette.ink },
+    subtitle: { ...(Type.body as TextStyle), color: palette.muted },
 
-  form: { gap: Spacing.lg },
-  field: { gap: Spacing.sm },
-  label: { ...(Type.caption as TextStyle), color: Palette.muted },
-  input: {
-    ...(Type.body as TextStyle),
-    color: Palette.ink,
-    backgroundColor: Palette.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Palette.line,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
+    form: { gap: Spacing.lg },
+    field: { gap: Spacing.sm },
+    label: { ...(Type.caption as TextStyle), color: palette.muted },
+    input: {
+      ...(Type.body as TextStyle),
+      color: palette.ink,
+      backgroundColor: palette.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.line,
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+    },
 
-  error: { ...(Type.body as TextStyle), color: Palette.warn, marginTop: -Spacing.md },
+    error: { ...(Type.body as TextStyle), color: palette.warn, marginTop: -Spacing.md },
 
-  switchLink: { alignItems: 'center', paddingVertical: Spacing.sm },
-  switchText: { ...(Type.body as TextStyle), color: Palette.muted },
-  switchStrong: { color: Palette.accent, fontWeight: '600' },
+    switchLink: { alignItems: 'center', paddingVertical: Spacing.sm },
+    switchText: { ...(Type.body as TextStyle), color: palette.muted },
+    switchStrong: { color: palette.accent, fontWeight: '600' },
 
-  pressed: { opacity: 0.6 },
-});
+    pressed: { opacity: 0.6 },
+  });

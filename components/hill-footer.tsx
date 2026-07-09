@@ -2,7 +2,8 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { interpolateColor, useAnimatedProps } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
-import { FOOTER_RAMPS, INPUT, themeIndex } from '@/constants/theme-transition';
+import { INPUT, RAMPS, themeIndex } from '@/constants/theme-transition';
+import { useTheme } from '@/contexts/theme';
 
 // Each layer's crown as a fraction of height (how high the ridge rises) and a
 // horizontal offset for the peak, so the ridges read as distinct overlapping hills.
@@ -17,15 +18,18 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 /** One self-driving hill ridge. Its own hook so we never call hooks in a loop. */
 function FooterLayer({ index, height }: { index: number; height: number }) {
   'use no memo';
+  const { scheme } = useTheme();
+  const ramp = RAMPS[scheme].FOOTER_RAMPS[index];
   const layer = LAYERS[index];
   const crownY = height - layer.rise * height;
   const d = `M0 ${height} L0 ${crownY + 20} C${layer.peakX * 0.4} ${crownY} ${
     layer.peakX * 1.6
   } ${crownY} 100 ${crownY + 20} L100 ${height} Z`;
 
-  const animatedProps = useAnimatedProps(() => ({
-    fill: interpolateColor(themeIndex.value, INPUT, FOOTER_RAMPS[index]),
-  }));
+  const animatedProps = useAnimatedProps(
+    () => ({ fill: interpolateColor(themeIndex.value, INPUT, ramp) }),
+    [scheme],
+  );
 
   return <AnimatedPath animatedProps={animatedProps} d={d} />;
 }

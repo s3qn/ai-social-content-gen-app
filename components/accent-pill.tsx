@@ -3,8 +3,9 @@ import { StyleSheet, Text, TextStyle } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 
 import { HapticPressable } from '@/components/haptic-pressable';
-import { INPUT, ON_HILL, PRIMARY, themeIndex } from '@/constants/theme-transition';
+import { INPUT, ON_HILL, RAMPS, themeIndex } from '@/constants/theme-transition';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme';
 
 type AccentPillProps = {
   label: string;
@@ -18,9 +19,12 @@ type AccentPillProps = {
  */
 export function AccentPill({ label, onPress }: AccentPillProps) {
   'use no memo';
-  const bg = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY),
-  }));
+  const { scheme } = useTheme();
+  const { PRIMARY } = RAMPS[scheme];
+  const bg = useAnimatedStyle(
+    () => ({ backgroundColor: interpolateColor(themeIndex.value, INPUT, PRIMARY) }),
+    [scheme],
+  );
 
   return (
     <HapticPressable

@@ -12,8 +12,9 @@ import { HapticPressable } from '@/components/haptic-pressable';
 import { CURVE_DEPTH, HillHeader } from '@/components/hill-header';
 import { HillFooter } from '@/components/hill-footer';
 import { CharacterId } from '@/constants/characters';
-import { Fonts, Palette, Radius, Spacing, TAB_BAR_CLEARANCE, Type } from '@/constants/theme';
-import { BG_TINT, INPUT, ON_HILL, themeIndex, transitionToCharacter } from '@/constants/theme-transition';
+import { Fonts, Radius, Spacing, TAB_BAR_CLEARANCE, Type } from '@/constants/theme';
+import { INPUT, ON_HILL, RAMPS, themeIndex, transitionToCharacter } from '@/constants/theme-transition';
+import { useTheme } from '@/contexts/theme';
 
 const FOOTER_HEIGHT = 150;
 
@@ -35,6 +36,8 @@ type ThemedScreenProps = {
 export function ThemedScreen({ character, header, children }: ThemedScreenProps) {
   'use no memo';
   const reduced = useReducedMotion();
+  const { scheme } = useTheme();
+  const { BG_TINT } = RAMPS[scheme];
 
   useFocusEffect(
     useCallback(() => {
@@ -42,9 +45,10 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
     }, [character, reduced]),
   );
 
-  const washStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(themeIndex.value, INPUT, BG_TINT),
-  }));
+  const washStyle = useAnimatedStyle(
+    () => ({ backgroundColor: interpolateColor(themeIndex.value, INPUT, BG_TINT) }),
+    [scheme],
+  );
 
   return (
     <Animated.View style={[styles.root, washStyle]}>
@@ -82,14 +86,17 @@ export function SettingsGear() {
   );
 }
 
-/** Bold slab-serif section heading (e.g. "STATS", "MY PEERS"). */
+/** Bold slab-serif section heading (e.g. "STATS", "MY PEERS"). Ink is theme-aware. */
 export function SectionHeading({ children }: { children: ReactNode }) {
-  return <Text style={styles.sectionHeading}>{children}</Text>;
+  const { palette } = useTheme();
+  return <Text style={[styles.sectionHeading, { color: palette.ink }]}>{children}</Text>;
 }
 
-/** Neutral grey placeholder block, standing in for not-yet-built content. */
+/** Neutral placeholder block, standing in for not-yet-built content. Theme-aware. */
 export function PlaceholderCard({ height = 96 }: { height?: number }) {
-  return <View style={[styles.placeholder, { height }]} />;
+  const { scheme } = useTheme();
+  const backgroundColor = scheme === 'dark' ? '#2A2724' : '#DEDAD2';
+  return <View style={[styles.placeholder, { height, backgroundColor }]} />;
 }
 
 const styles = StyleSheet.create({
@@ -114,7 +121,6 @@ const styles = StyleSheet.create({
     ...(Type.display as TextStyle),
     fontFamily: Fonts.serif,
     fontWeight: '700',
-    color: Palette.ink,
   },
   headerTitle: {
     ...(Type.heading as TextStyle),
@@ -125,7 +131,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   placeholder: {
-    backgroundColor: '#DEDAD2',
     borderRadius: Radius.lg,
   },
   footerFixed: {
