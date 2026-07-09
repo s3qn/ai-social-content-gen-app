@@ -8,7 +8,6 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 
-import { ChatFab } from '@/components/chat-fab';
 import { HapticPressable } from '@/components/haptic-pressable';
 import { CURVE_DEPTH, HillHeader } from '@/components/hill-header';
 import { HillFooter } from '@/components/hill-footer';
@@ -29,9 +28,9 @@ type ThemedScreenProps = {
 
 /**
  * Shared scaffold for every character tab: an animated background wash, a pinned
- * self-driving hill header, a scrolling body, pinned footer hills, and the chat
- * FAB. On focus it eases the shared `themeIndex` toward this tab's character, so
- * the whole scheme cross-fades when switching tabs (snaps under reduced motion).
+ * self-driving hill header, a scrolling body, and pinned footer hills. On focus
+ * it eases the shared `themeIndex` toward this tab's character, so the whole
+ * scheme cross-fades when switching tabs (snaps under reduced motion).
  */
 export function ThemedScreen({ character, header, children }: ThemedScreenProps) {
   'use no memo';
@@ -61,8 +60,6 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
       <View style={styles.footerFixed}>
         <HillFooter height={FOOTER_HEIGHT} />
       </View>
-
-      <ChatFab />
     </Animated.View>
   );
 }
