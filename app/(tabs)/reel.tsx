@@ -1,6 +1,5 @@
-import { useRouter } from 'expo-router';
-
 import { AccentPill } from '@/components/accent-pill';
+import { playCreateOverlay } from '@/components/create-overlay';
 import {
   HeaderTitle,
   PlaceholderCard,
@@ -12,7 +11,6 @@ import { GLOBAL_TRENDS, RELATED } from '@/constants/mock-screens';
 
 // The Trends tab belongs to Spark (yellow — Momentum).
 export default function ReelScreen() {
-  const router = useRouter();
   return (
     <ThemedScreen
       character="spark"
@@ -32,7 +30,7 @@ export default function ReelScreen() {
         <PlaceholderCard key={id} height={120} />
       ))}
 
-      <AccentPill label="Add as Idea" onPress={() => router.push('/modal')} />
+      <AccentPill label="Add as Idea" onPress={() => playCreateOverlay()} />
     </ThemedScreen>
   );
 }

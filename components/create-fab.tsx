@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useRouter, useSegments } from 'expo-router';
+import { useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { playCreateOverlay } from '@/components/create-overlay';
 import { triggerImpact } from '@/components/haptic-pressable';
 import { useTheme } from '@/contexts/theme';
 
@@ -33,7 +34,6 @@ function useReduceTransparency() {
 // tab screens. (The native tab bar has no side-button API, so this is an overlay.)
 export function CreateFab() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const segments = useSegments();
   const reduceTransparency = useReduceTransparency();
   const { scheme, palette } = useTheme();
@@ -49,7 +49,7 @@ export function CreateFab() {
       hitSlop={8}
       onPress={() => {
         triggerImpact();
-        router.push('/modal');
+        playCreateOverlay();
       }}
       style={({ pressed }) => [
         styles.fab,

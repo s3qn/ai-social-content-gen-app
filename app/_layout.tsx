@@ -5,6 +5,7 @@ import { memo } from 'react';
 import 'react-native-reanimated';
 
 import { CreateFab } from '@/components/create-fab';
+import { CreateOverlay } from '@/components/create-overlay';
 import { ScreenSwirl } from '@/components/screen-swirl';
 import { SessionProvider, useAuth } from '@/contexts/auth';
 import { ThemeProvider, useTheme } from '@/contexts/theme';
@@ -26,7 +27,6 @@ const AuthedStack = memo(function AuthedStack({ isSignedIn }: { isSignedIn: bool
 
       <Stack.Protected guard={isSignedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Create' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack.Protected>
 
@@ -62,6 +62,7 @@ function ThemedRoot() {
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ScreenSwirl />
       <CreateFab />
+      <CreateOverlay />
     </NavThemeProvider>
   );
 }
