@@ -38,6 +38,11 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# python (backend/instagram_scan)
+.venv/
+__pycache__/
+*.pyc
+
 app-example
 
 # generated native folders
