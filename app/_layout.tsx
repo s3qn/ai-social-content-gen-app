@@ -8,6 +8,7 @@ import { CreateFab } from '@/components/create-fab';
 import { CreateOverlay } from '@/components/create-overlay';
 import { ScreenSwirl } from '@/components/screen-swirl';
 import { SessionProvider, useAuth } from '@/contexts/auth';
+import { OnboardingProvider } from '@/contexts/onboarding';
 import { ThemeProvider, useTheme } from '@/contexts/theme';
 
 export const unstable_settings = {
@@ -28,6 +29,12 @@ const AuthedStack = memo(function AuthedStack({ isSignedIn }: { isSignedIn: bool
       <Stack.Protected guard={isSignedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        {/* Onboarding group registered as a signed-in screen so the temporary
+            Settings dev entry can reach it. The REAL gate (splitting this on
+            `hasOnboarded` → onboarding vs tabs) is wired in F6; until then this
+            is just a reachable sibling, so the memo-on-boolean freeze fix is
+            untouched. */}
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       </Stack.Protected>
 
       <Stack.Protected guard={!isSignedIn}>
@@ -57,7 +64,9 @@ function ThemedRoot() {
   return (
     <NavThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <SessionProvider>
-        <RootNavigator />
+        <OnboardingProvider>
+          <RootNavigator />
+        </OnboardingProvider>
       </SessionProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ScreenSwirl />

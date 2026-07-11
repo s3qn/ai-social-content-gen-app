@@ -1,0 +1,238 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useMemo, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextStyle,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { BlackButton } from '@/components/black-button';
+import { HapticPressable } from '@/components/haptic-pressable';
+import { MascotBubble } from '@/components/onboarding/mascot-bubble';
+import { MultiSelect } from '@/components/onboarding/multi-select';
+import { Segmented } from '@/components/onboarding/segmented';
+import { SingleSelect } from '@/components/onboarding/single-select';
+import { OnboardingStep, onboardingSteps } from '@/constants/onboarding-steps';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useOnboarding } from '@/contexts/onboarding';
+import { useTheme } from '@/contexts/theme';
+
+/**
+ * The onboarding driver. Walks `onboardingSteps`, renders the current step by
+ * its `type`, owns the top progress bar + back button, and writes every answer
+ * straight to the onboarding context (so answers persist as you go). The last
+ * step's "Continue" marks onboarding complete and exits.
+ *
+ * F1: reached via the temporary "Run onboarding" row in Settings — the real
+ * router gate is wired in F6.
+ */
+export default function OnboardingDriver() {
+  const insets = useSafeAreaInsets();
+  const { palette } = useTheme();
+  const styles = useMemo(() => makeStyles(palette), [palette]);
+  const { answers, setAnswer, complete } = useOnboarding();
+
+  const total = onboardingSteps.length;
+  const [index, setIndex] = useState(0);
+  const step = onboardingSteps[index];
+
+  const answered = isAnswered(step, answers[step.id]);
+  const isLast = index === total - 1;
+
+  const goBack = () => {
+    if (index > 0) setIndex((i) => i - 1);
+    else router.back(); // leave the group (back to Settings in F1)
+  };
+
+  const goNext = () => {
+    if (!answered) return;
+    if (isLast) {
+      complete();
+      router.back(); // F1 has nothing after Connect — exit the flow
+    } else {
+      setIndex((i) => i + 1);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+        <HapticPressable
+          hitSlop={12}
+          onPress={goBack}
+          style={({ pressed }) => pressed && styles.pressed}>
+          <Ionicons name="chevron-back" size={26} color={palette.ink} />
+        </HapticPressable>
+
+        {/* Progress bar — fills as the user advances through the steps. */}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]} />
+        </View>
+
+        <Text style={styles.counter}>
+          {index + 1}/{total}
+        </Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <MascotBubble text={step.mascotText} />
+        <View style={styles.stepArea}>{renderStep(step, answers, setAnswer, styles, palette)}</View>
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
+        <BlackButton label={isLast ? 'Finish' : 'Continue'} onPress={goNext} />
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+/** Continue/Finish is enabled only when the current step has a valid answer. */
+function isAnswered(step: OnboardingStep, answer: unknown): boolean {
+  switch (step.type) {
+    case 'text':
+      return typeof answer === 'string' && answer.trim().length > 0;
+    case 'multi-select':
+      return Array.isArray(answer) && answer.length >= (step.min ?? 1);
+    case 'single-select':
+    case 'segmented':
+      return typeof answer === 'string' && answer.length > 0;
+  }
+}
+
+/** Render the current step's archetype. Adding a step type = add a case here. */
+function renderStep(
+  step: OnboardingStep,
+  answers: Record<string, unknown>,
+  setAnswer: (key: string, value: unknown) => void,
+  styles: ReturnType<typeof makeStyles>,
+  palette: AppPalette,
+) {
+  switch (step.type) {
+    case 'single-select':
+      return (
+        <SingleSelect
+          options={step.options}
+          value={answers[step.id] as string | undefined}
+          onChange={(v) => setAnswer(step.id, v)}
+        />
+      );
+    case 'multi-select':
+      return (
+        <MultiSelect
+          options={step.options}
+          value={(answers[step.id] as string[] | undefined) ?? []}
+          onChange={(v) => setAnswer(step.id, v)}
+          max={step.max}
+        />
+      );
+    case 'segmented':
+      return (
+        <Segmented
+          options={step.options}
+          value={answers[step.id] as string | undefined}
+          onChange={(v) => setAnswer(step.id, v)}
+        />
+      );
+    case 'text':
+      // No container box — the "@" prefix + field float directly on the themed
+      // background. Big font + tall touch target; caret/selection use the accent.
+      return (
+        <View style={styles.textStep}>
+          {step.prefix ? <Text style={styles.textPrefix}>{step.prefix}</Text> : null}
+          <TextInput
+            style={styles.textInput}
+            value={(answers[step.id] as string | undefined) ?? ''}
+            onChangeText={(t) => setAnswer(step.id, t)}
+            placeholder={step.placeholder}
+            placeholderTextColor={palette.muted}
+            selectionColor={palette.accent}
+            cursorColor={palette.accent}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
+          />
+        </View>
+      );
+  }
+}
+
+const makeStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: palette.bg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: Spacing.md,
+    },
+    progressTrack: {
+      flex: 1,
+      height: 8,
+      borderRadius: Radius.pill,
+      backgroundColor: palette.line,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: Radius.pill,
+      backgroundColor: palette.accent,
+    },
+    counter: {
+      ...(Type.caption as TextStyle),
+      color: palette.muted,
+    },
+    body: {
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.xl,
+      paddingBottom: Spacing.xxl,
+      gap: Spacing.xxl,
+    },
+    stepArea: { gap: Spacing.md },
+    // Boxless @username field: big text + tall touch target, floating directly
+    // on the themed background (no card / border / fill). Centered + balanced.
+    textStep: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: Spacing.xl,
+    },
+    textPrefix: {
+      fontSize: 34,
+      lineHeight: 42,
+      fontWeight: '700',
+      letterSpacing: -0.5,
+      color: palette.muted,
+      marginRight: Spacing.xs,
+    },
+    textInput: {
+      flexShrink: 1,
+      minWidth: 160,
+      fontSize: 34,
+      lineHeight: 42,
+      fontWeight: '700',
+      letterSpacing: -0.5,
+      color: palette.ink,
+      paddingVertical: Spacing.md,
+    },
+    footer: {
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.md,
+    },
+    pressed: { opacity: 0.6 },
+  });

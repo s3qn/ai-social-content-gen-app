@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
@@ -5,6 +7,7 @@ import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth';
+import { useOnboarding } from '@/contexts/onboarding';
 import { ThemeMode, useTheme } from '@/contexts/theme';
 
 const MODES: { value: ThemeMode; label: string }[] = [
@@ -21,7 +24,15 @@ const MODES: { value: ThemeMode; label: string }[] = [
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { mode, palette, setMode } = useTheme();
+  const { reset: resetOnboarding } = useOnboarding();
   const styles = useMemo(() => makeStyles(palette), [palette]);
+
+  // TEMPORARY dev entry (removed in F6): reset onboarding + jump into the flow so
+  // it's reachable before the real router gate is wired.
+  const runOnboarding = () => {
+    resetOnboarding();
+    router.push('/step');
+  };
 
   return (
     <View style={styles.container}>
@@ -48,6 +59,22 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+      </View>
+
+      {/* TEMPORARY — removed in F6 once the real onboarding gate ships. */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Developer</Text>
+        <HapticPressable
+          accessibilityRole="button"
+          onPress={runOnboarding}
+          style={({ pressed }) => [styles.devRow, pressed && styles.devRowPressed]}>
+          <Ionicons name="flask-outline" size={20} color={palette.accent} />
+          <View style={styles.devRowText}>
+            <Text style={styles.devRowTitle}>Run onboarding</Text>
+            <Text style={styles.devRowSub}>Temporary — replays the flow (removed in F6)</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={palette.muted} />
+        </HapticPressable>
       </View>
 
       <BlackButton label="Log out" onPress={() => signOut()} />
@@ -100,5 +127,33 @@ const makeStyles = (palette: AppPalette) =>
     },
     segmentTextActive: {
       color: palette.surface,
+    },
+    devRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      backgroundColor: palette.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.line,
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.lg,
+    },
+    devRowPressed: {
+      opacity: 0.6,
+    },
+    devRowText: {
+      flex: 1,
+      gap: 2,
+    },
+    devRowTitle: {
+      ...(Type.body as TextStyle),
+      color: palette.ink,
+      fontWeight: '600',
+    },
+    devRowSub: {
+      ...(Type.body as TextStyle),
+      fontSize: 12,
+      color: palette.muted,
     },
   });
