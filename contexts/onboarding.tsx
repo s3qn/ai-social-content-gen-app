@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useAuth } from '@/contexts/auth';
+import type { ScanResult } from '@/lib/scan';
 
 /**
  * Onboarding progress + answers, structured exactly like contexts/theme.tsx:
@@ -25,6 +26,10 @@ type OnboardingState = {
   answers: OnboardingAnswers;
   /** Persist a single step's answer. */
   setAnswer: (key: string, value: unknown) => void;
+  /** The most recent real Instagram scan result (F2), or null before scanning. */
+  scanResult: ScanResult | null;
+  /** Store (and persist) the scan result once the fetch resolves. */
+  setScanResult: (result: ScanResult) => void;
   /** Mark onboarding complete (sets + persists the flag). */
   complete: () => void;
   /** Clear the flag + answers — used by the temporary Settings dev entry so the
@@ -36,6 +41,7 @@ const OnboardingContext = createContext<OnboardingState | null>(null);
 
 const FLAG_PREFIX = 'app-onboarding-complete';
 const ANSWERS_PREFIX = 'app-onboarding-answers';
+const SCAN_PREFIX = 'app-onboarding-scan';
 
 type SyncStorage = {
   getItem(k: string): string | null;
@@ -57,6 +63,9 @@ function flagKey(uid: string | null): string {
 function answersKey(uid: string | null): string {
   return `${ANSWERS_PREFIX}:${ns(uid)}`;
 }
+function scanKey(uid: string | null): string {
+  return `${SCAN_PREFIX}:${ns(uid)}`;
+}
 
 function readFlag(uid: string | null): boolean {
   try {
@@ -77,6 +86,17 @@ function readAnswers(uid: string | null): OnboardingAnswers {
   }
 }
 
+function readScan(uid: string | null): ScanResult | null {
+  try {
+    const raw = storage()?.getItem(scanKey(uid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' ? (parsed as ScanResult) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   // `session` is itself seeded synchronously by SessionProvider, so the user id
   // is already known on the first render — the seeds below read the right bucket.
@@ -85,18 +105,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(() => readFlag(uid));
   const [answers, setAnswers] = useState<OnboardingAnswers>(() => readAnswers(uid));
+  const [scanResult, setScanResultState] = useState<ScanResult | null>(() => readScan(uid));
 
   // Re-seed when the signed-in user changes (sign in/out swaps the namespace).
   // On the very first render this matches the initializer above, so it's a no-op.
   useEffect(() => {
     setHasOnboarded(readFlag(uid));
     setAnswers(readAnswers(uid));
+    setScanResultState(readScan(uid));
   }, [uid]);
 
   const value = useMemo<OnboardingState>(
     () => ({
       hasOnboarded,
       answers,
+      scanResult,
       setAnswer: (key, next) => {
         setAnswers((prev) => {
           const merged = { ...prev, [key]: next };
@@ -107,6 +130,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           }
           return merged;
         });
+      },
+      setScanResult: (result) => {
+        setScanResultState(result);
+        try {
+          storage()?.setItem(scanKey(uid), JSON.stringify(result));
+        } catch {
+          // best-effort persistence; in-memory state still updates
+        }
       },
       complete: () => {
         setHasOnboarded(true);
@@ -119,15 +150,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       reset: () => {
         setHasOnboarded(false);
         setAnswers({});
+        setScanResultState(null);
         try {
           storage()?.setItem(flagKey(uid), 'false');
           storage()?.setItem(answersKey(uid), '{}');
+          storage()?.setItem(scanKey(uid), '');
         } catch {
           // best-effort
         }
       },
     }),
-    [hasOnboarded, answers, uid],
+    [hasOnboarded, answers, scanResult, uid],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

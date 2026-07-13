@@ -58,11 +58,50 @@ export type TextStep = StepBase & {
   prefix?: string;
 };
 
+/**
+ * F2 — Scan. Animated checklist tied to the REAL Instagram fetch. On mount the
+ * renderer reads the earlier @username answer, calls the scan service, ticks
+ * the rows, stores the result in context, and enables Continue.
+ */
+export type ScanStep = StepBase & {
+  type: 'scan';
+  /** Checklist row labels shown while the fetch runs. */
+  rows: string[];
+  /** Answer key holding the @username to scan (defaults to 'username'). */
+  usernameKey?: string;
+};
+
+/**
+ * F2 — Interstitial social-proof card: mascot + headline + a light Yes/No
+ * question (segmented). Used to break up the flow around the scan.
+ */
+export type InterstitialStep = StepBase & {
+  type: 'interstitial';
+  headline: string;
+  body?: string;
+  options: SelectOption[];
+};
+
+/**
+ * F2 — Call-to-action step: mascot + optional body + a single primary button
+ * (the footer button uses `buttonLabel`). No answer required; advances the flow.
+ * The "Unlock Profile Summary" reveal it leads to is built in F3.
+ */
+export type CtaStep = StepBase & {
+  type: 'cta';
+  buttonLabel: string;
+  body?: string;
+  icon?: IoniconName;
+};
+
 export type OnboardingStep =
   | SingleSelectStep
   | MultiSelectStep
   | SegmentedStep
-  | TextStep;
+  | TextStep
+  | ScanStep
+  | InterstitialStep
+  | CtaStep;
 
 /**
  * F1 — Connect. Two steps: pick the platform, then enter the handle. Kept short
@@ -87,5 +126,50 @@ export const onboardingSteps: OnboardingStep[] = [
     mascotText: "Nice! What's your @username there?",
     placeholder: 'yourhandle',
     prefix: '@',
+  },
+
+  // F2 — Scan. An interstitial to set up the scan, the real fetch checklist, a
+  // second interstitial for social proof, then the "Unlock" CTA (F3 builds the
+  // Profile Summary reveal that the unlock leads into).
+  {
+    id: 'checks_analytics',
+    type: 'interstitial',
+    mascotText: 'Quick one before we look at your profile…',
+    headline: 'Do you check your analytics every week?',
+    body: 'Most creators who grow fast keep a close eye on what’s working.',
+    options: [
+      { value: 'yes', label: 'Yes, always' },
+      { value: 'no', label: 'Not really' },
+    ],
+  },
+  {
+    id: 'scan',
+    type: 'scan',
+    mascotText: 'Give me a moment — I’m pulling your real numbers.',
+    usernameKey: 'username',
+    rows: [
+      'Scanning your profile',
+      'Checking your engagement',
+      'Finding your top content',
+    ],
+  },
+  {
+    id: 'wants_more_reach',
+    type: 'interstitial',
+    mascotText: 'Got it — this is looking interesting.',
+    headline: 'Want to reach more of the right people?',
+    body: 'Creators using a clear content strategy grow up to 3× faster.',
+    options: [
+      { value: 'yes', label: 'Yes, show me' },
+      { value: 'no', label: 'Maybe later' },
+    ],
+  },
+  {
+    id: 'unlock_summary',
+    type: 'cta',
+    mascotText: 'All done — your profile summary is ready.',
+    body: 'See your real stats, engagement and a personalised score.',
+    buttonLabel: 'Unlock Profile Summary',
+    icon: 'sparkles',
   },
 ];

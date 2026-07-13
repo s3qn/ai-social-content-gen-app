@@ -15,8 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
+import { CtaCard } from '@/components/onboarding/cta-card';
+import { Interstitial } from '@/components/onboarding/interstitial';
 import { MascotBubble } from '@/components/onboarding/mascot-bubble';
 import { MultiSelect } from '@/components/onboarding/multi-select';
+import { ScanChecklist } from '@/components/onboarding/scan-checklist';
 import { Segmented } from '@/components/onboarding/segmented';
 import { SingleSelect } from '@/components/onboarding/single-select';
 import { OnboardingStep, onboardingSteps } from '@/constants/onboarding-steps';
@@ -92,7 +95,7 @@ export default function OnboardingDriver() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
-        <BlackButton label={isLast ? 'Finish' : 'Continue'} onPress={goNext} />
+        <BlackButton label={continueLabel(step, isLast)} onPress={goNext} disabled={!answered} />
       </View>
     </KeyboardAvoidingView>
   );
@@ -107,8 +110,21 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
       return Array.isArray(answer) && answer.length >= (step.min ?? 1);
     case 'single-select':
     case 'segmented':
+    case 'interstitial':
       return typeof answer === 'string' && answer.length > 0;
+    case 'scan':
+      // The ScanChecklist writes a truthy marker here once the fetch resolves.
+      return answer === 'done';
+    case 'cta':
+      // No answer to collect — the button just advances the flow.
+      return true;
   }
+}
+
+/** Footer button label: CTA steps carry their own; else Continue/Finish. */
+function continueLabel(step: OnboardingStep, isLast: boolean): string {
+  if (step.type === 'cta') return step.buttonLabel;
+  return isLast ? 'Finish' : 'Continue';
 }
 
 /** Render the current step's archetype. Adding a step type = add a case here. */
@@ -145,6 +161,27 @@ function renderStep(
           onChange={(v) => setAnswer(step.id, v)}
         />
       );
+    case 'interstitial':
+      return (
+        <Interstitial
+          headline={step.headline}
+          body={step.body}
+          options={step.options}
+          value={answers[step.id] as string | undefined}
+          onChange={(v) => setAnswer(step.id, v)}
+        />
+      );
+    case 'scan':
+      return (
+        <ScanChecklist
+          rows={step.rows}
+          username={(answers[step.usernameKey ?? 'username'] as string | undefined) ?? ''}
+          alreadyDone={answers[step.id] === 'done'}
+          onDone={() => setAnswer(step.id, 'done')}
+        />
+      );
+    case 'cta':
+      return <CtaCard body={step.body} icon={step.icon} />;
     case 'text':
       // No container box — the "@" prefix + field float directly on the themed
       // background. Big font + tall touch target; caret/selection use the accent.

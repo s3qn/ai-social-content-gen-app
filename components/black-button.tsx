@@ -9,22 +9,26 @@ type Props = {
   label: string;
   onPress?: () => void;
   variant?: 'solid' | 'outline';
+  /** Dim + block presses (e.g. a step whose answer isn't ready yet). */
+  disabled?: boolean;
 };
 
 // Primary button used across the onboarding + settings screens. `solid` = filled
 // ink pill (near-white label); `outline` = surface fill with an ink hairline
 // border. Colors follow the active theme.
-export function BlackButton({ label, onPress, variant = 'solid' }: Props) {
+export function BlackButton({ label, onPress, variant = 'solid', disabled = false }: Props) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const isSolid = variant === 'solid';
   return (
     <HapticPressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         styles.base,
         isSolid ? styles.solid : styles.outline,
-        pressed && styles.pressed,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
       ]}>
       <Text style={[styles.label, isSolid ? styles.solidLabel : styles.outlineLabel]}>{label}</Text>
     </HapticPressable>
@@ -59,5 +63,8 @@ const makeStyles = (palette: AppPalette) =>
     },
     pressed: {
       opacity: 0.85,
+    },
+    disabled: {
+      opacity: 0.4,
     },
   });
