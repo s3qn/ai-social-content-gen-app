@@ -6,11 +6,13 @@ import { Animated, StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
-import type { EngagementInsight, ScanStats } from '@/lib/scan';
+import type { EngagementInsight, ProfileScore, ScanStats } from '@/lib/scan';
 
 type Props = {
   stats: ScanStats;
   engagement: EngagementInsight;
+  /** Real Claude score from /scan; null/absent → the heuristic below is used. */
+  score?: ProfileScore | null;
 };
 
 const MAX_SCORE = 10;
@@ -29,13 +31,13 @@ export function verdictLabel(score: number): string {
 }
 
 /**
- * STUB: heuristic until backend Claude score (F3-real).
+ * STUB: heuristic fallback for when the backend returns `score: null` (the
+ * Claude pass is unconfigured or failed).
  *
- * The backend returns `score: null` for now, so we derive a deterministic 0–10
- * number client-side from the REAL engagement + follower data. It blends the
- * profile's engagement rate (avg likes+comments ÷ followers) with a log-scaled
- * reach bonus, so the value varies per profile and reads as real. This is NOT a
- * hardcoded constant — swap it for the real Claude score once F3-real lands.
+ * Derives a deterministic 0–10 number client-side from the REAL engagement +
+ * follower data. It blends the profile's engagement rate (avg likes+comments ÷
+ * followers) with a log-scaled reach bonus, so the value varies per profile and
+ * reads as real. This is NOT a hardcoded constant — it's the graceful fallback.
  */
 export function computeScore(stats: ScanStats, engagement: EngagementInsight): number {
   const followers = stats.followers ?? 0;
@@ -57,17 +59,33 @@ export function computeScore(stats: ScanStats, engagement: EngagementInsight): n
   return Math.max(0, Math.min(MAX_SCORE, Math.round(score * 10) / 10));
 }
 
+/** Clamp a backend score into the meter's 0–10 range, or null if unusable. */
+function realScore(score: ProfileScore | null | undefined): number | null {
+  const n = score?.profileScore;
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(MAX_SCORE, n));
+}
+
 /**
  * A red→amber→green gradient meter with a knob at the score position, the big
- * numeric score, and a verdict label. Theme-aware; the knob slides in on mount
- * with plain Animated (no Reanimated — `'use no memo'` keeps the compiler off).
+ * numeric score, and a verdict label. Prefers the real Claude score (+ its label
+ * and one-line explanation) and falls back to the local heuristic when the
+ * backend sent `score: null`. Theme-aware; the knob slides in on mount with
+ * plain Animated (no Reanimated — `'use no memo'` keeps the compiler off).
  */
-export function ScoreMeter({ stats, engagement }: Props) {
+export function ScoreMeter({ stats, engagement, score: aiScore }: Props) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
 
-  const score = useMemo(() => computeScore(stats, engagement), [stats, engagement]);
-  const label = verdictLabel(score);
+  const score = useMemo(() => {
+    const real = realScore(aiScore);
+    return real ?? computeScore(stats, engagement);
+  }, [aiScore, stats, engagement]);
+
+  // Only trust the label/explanation when the number itself was usable.
+  const isReal = realScore(aiScore) !== null;
+  const label = (isReal && aiScore?.scoreLabel?.trim()) || verdictLabel(score);
+  const explanation = (isReal && aiScore?.scoreExplanation?.trim()) || null;
   const fraction = score / MAX_SCORE;
 
   const [trackWidth, setTrackWidth] = useState(0);
@@ -107,6 +125,8 @@ export function ScoreMeter({ stats, engagement }: Props) {
         <Text style={styles.scaleText}>Needs work</Text>
         <Text style={styles.scaleText}>Thriving</Text>
       </View>
+
+      {explanation ? <Text style={styles.explanation}>{explanation}</Text> : null}
     </View>
   );
 }
@@ -165,5 +185,11 @@ const makeStyles = (palette: AppPalette) =>
     scaleText: {
       ...(Type.caption as TextStyle),
       color: palette.muted,
+    },
+    explanation: {
+      ...(Type.body as TextStyle),
+      color: palette.muted,
+      lineHeight: 20,
+      marginTop: Spacing.xs,
     },
   });

@@ -13,9 +13,10 @@ type Props = {
 };
 
 /**
- * F3 — Profile Summary reveal. Composes the real stat tiles + the (heuristic,
- * stubbed) score meter from the scan result stored in context. Falls back
- * gracefully if the scan result is missing.
+ * F3 — Profile Summary reveal. Composes the real stat tiles + the score meter
+ * from the scan result stored in context. The meter prefers the backend's real
+ * Claude score and falls back to its local heuristic when that's null. Falls
+ * back gracefully if the scan result is missing entirely.
  */
 export function ProfileSummary({ onRescan }: Props) {
   const { palette } = useTheme();
@@ -29,7 +30,11 @@ export function ProfileSummary({ onRescan }: Props) {
       <StatTrio stats={scanResult.stats} />
       <View style={styles.section}>
         <Text style={styles.eyebrow}>Your Creator Score</Text>
-        <ScoreMeter stats={scanResult.stats} engagement={scanResult.engagementInsight} />
+        <ScoreMeter
+          stats={scanResult.stats}
+          engagement={scanResult.engagementInsight}
+          score={scanResult.score}
+        />
       </View>
     </View>
   );

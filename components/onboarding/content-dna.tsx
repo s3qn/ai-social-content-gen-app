@@ -12,10 +12,10 @@ type Props = {
   onRescan?: () => void;
 };
 
-// STUB: placeholder until backend Claude vibe/themes (F3-real).
-// The backend returns `dna: null` for now, so the vibe tags + top themes below
-// are fixed placeholder copy. The post-type bar + engagement insight above them
-// are REAL scan data — only this block is stubbed.
+// STUB: fallback for when the backend's Claude pass is unavailable.
+// `/scan` returns `dna: null` whenever the AI analysis is unconfigured or fails,
+// and these fixed placeholders stand in for the vibe tags + top themes. The
+// post-type bar + engagement insight above them are always REAL scan data.
 const STUB_DNA = {
   vibe: ['Aspirational', 'Polished', 'Playful', 'Authentic'],
   topThemes: [
@@ -26,15 +26,39 @@ const STUB_DNA = {
 };
 
 /**
- * F3 — Content DNA reveal. The post-type DnaBar + engagement insight are REAL
- * scan data; the vibe chips + top themes are stubbed placeholders (STUB_DNA)
- * until the backend Claude analysis lands. Falls back gracefully if the scan
- * result is missing.
+ * Claude returns the vibe as one short phrase ("Warm, polished and playful").
+ * Split it into chips so real data lands in the row the stub designed for,
+ * falling back to the whole phrase as a single chip.
+ */
+function vibeChips(vibe: string): string[] {
+  const parts = vibe
+    .split(/,|\/|&|\band\b/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return (parts.length ? parts : [vibe.trim()]).slice(0, 4);
+}
+
+/**
+ * F3 — Content DNA reveal. The post-type DnaBar + engagement insight are always
+ * REAL scan data. The vibe chips + top themes come from the backend's Claude
+ * analysis (`scanResult.dna`) when present, and fall back to STUB_DNA when it's
+ * null. Falls back to RevealFallback if there's no scan result at all.
  */
 export function ContentDna({ onRescan }: Props) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const { scanResult } = useOnboarding();
+
+  // Guard the shape as well as presence: a cached result from an older backend
+  // (or a partial payload) must degrade to the stub rather than render blanks.
+  const vibeRaw = scanResult?.dna?.vibe;
+  const themesRaw = scanResult?.dna?.topThemes;
+  const realVibe = typeof vibeRaw === 'string' && vibeRaw.trim() ? vibeRaw : null;
+  const realThemes = Array.isArray(themesRaw)
+    ? themesRaw.filter((t) => typeof t === 'string' && !!t.trim())
+    : [];
+
+  const vibe = useMemo(() => (realVibe ? vibeChips(realVibe) : STUB_DNA.vibe), [realVibe]);
 
   if (!scanResult) return <RevealFallback onRescan={onRescan} />;
 
@@ -51,7 +75,7 @@ export function ContentDna({ onRescan }: Props) {
       <View style={styles.section}>
         <Text style={styles.eyebrow}>Your Vibe</Text>
         <View style={styles.chips}>
-          {STUB_DNA.vibe.map((v, i) => (
+          {vibe.map((v, i) => (
             <Chip key={v} label={v} variant={i === 0 ? 'accent' : 'subtle'} />
           ))}
         </View>
@@ -60,12 +84,18 @@ export function ContentDna({ onRescan }: Props) {
       <View style={styles.section}>
         <Text style={styles.eyebrow}>Top Themes</Text>
         <View style={styles.themes}>
-          {STUB_DNA.topThemes.map((t) => (
-            <View key={t.label} style={styles.themeRow}>
-              <Text style={styles.themeLabel}>{t.label}</Text>
-              <Text style={styles.themeWeight}>{t.weight}</Text>
-            </View>
-          ))}
+          {realThemes.length
+            ? realThemes.map((t) => (
+                <View key={t} style={styles.themeRow}>
+                  <Text style={styles.themeLabel}>{t}</Text>
+                </View>
+              ))
+            : STUB_DNA.topThemes.map((t) => (
+                <View key={t.label} style={styles.themeRow}>
+                  <Text style={styles.themeLabel}>{t.label}</Text>
+                  <Text style={styles.themeWeight}>{t.weight}</Text>
+                </View>
+              ))}
         </View>
       </View>
 

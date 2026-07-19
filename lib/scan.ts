@@ -7,8 +7,9 @@
  * timeout. Every failure is mapped to a typed, friendly `ScanError` the UI can
  * show inline (no raw status codes / stack traces reach the user).
  *
- * The response shape mirrors backend/instagram_scan/main.py (P1 — Apify only;
- * `dna` and `score` are filled in F3).
+ * The response shape mirrors backend/instagram_scan/main.py. `dna` and `score`
+ * come from the backend's best-effort Claude pass and are null whenever that
+ * pass is unconfigured or fails — callers must handle both.
  */
 
 const SCAN_URL = process.env.EXPO_PUBLIC_SCAN_URL;
@@ -37,13 +38,29 @@ export type EngagementInsight = {
   bestType: string | null;
 };
 
+/**
+ * Claude-derived content vibe + recurring themes. Null when the backend's AI
+ * pass is unavailable (no key) or failed — the UI falls back to its stub.
+ */
+export type ContentDna = {
+  vibe: string;
+  topThemes: string[];
+};
+
+/** Claude-derived creator score. Null under the same conditions as `dna`. */
+export type ProfileScore = {
+  profileScore: number; // 0–10, one decimal
+  scoreLabel: string;
+  scoreExplanation: string;
+};
+
 /** The full POST /scan success payload. */
 export type ScanResult = {
   stats: ScanStats;
   postTypeBreakdown: PostTypeBreakdown;
   engagementInsight: EngagementInsight;
-  dna: unknown | null; // filled in F3
-  score: unknown | null; // filled in F3
+  dna: ContentDna | null;
+  score: ProfileScore | null;
 };
 
 /** Machine-readable failure category, used by the UI to pick a message. */

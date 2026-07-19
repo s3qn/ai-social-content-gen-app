@@ -1,13 +1,17 @@
-"""FastAPI scan service (P1 — Apify only, no Claude yet).
+"""FastAPI scan service (Apify stats + a best-effort Claude Content DNA pass).
 
 POST /scan  {"username": "..."}  ->
     {
       "stats": {followers, following, posts, fullName, avatarUrl},
       "postTypeBreakdown": {...},
       "engagementInsight": {...},
-      "dna": null,     # filled in F3
-      "score": null,   # filled in F3
+      "dna":   {vibe, topThemes} | null,
+      "score": {profileScore, scoreLabel, scoreExplanation} | null,
     }
+
+`dna` / `score` come from analyze.ai_content_dna(). That call is best-effort:
+if the Anthropic key is missing or the call fails, both stay null and the real
+Apify-derived stats are returned as normal — the scan never fails on AI.
 
 Security:
   - Bearer auth: Authorization: Bearer <SCAN_TOKEN>, constant-time compared.
@@ -24,8 +28,9 @@ from dotenv import find_dotenv, load_dotenv
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
-from analyze import engagement_by_type, post_type_breakdown
+from analyze import ai_content_dna, engagement_by_type, post_type_breakdown
 from scraper import fetch_posts, fetch_profile, load_apify_api_key
 
 load_dotenv(find_dotenv())
@@ -93,6 +98,16 @@ def _profile_stats(profile: dict) -> dict:
     }
 
 
+def _captions(posts: list[dict]) -> list[str]:
+    """Pull the caption text out of the raw Apify post items."""
+    out = []
+    for post in posts or []:
+        caption = post.get("caption")
+        if isinstance(caption, str) and caption.strip():
+            out.append(caption)
+    return out
+
+
 def _run_scan(handle: str) -> dict:
     api_key = load_apify_api_key() or os.getenv("APIFY_API_KEY")
     if not api_key:
@@ -121,12 +136,29 @@ def _run_scan(handle: str) -> dict:
         raise ScanError(502, "apify_error", "Upstream scrape failed. Try again later.")
     post_items = post_items or []
 
+    # Best-effort Claude pass over the captions. `ai_content_dna` never raises;
+    # when it returns None (no key, API failure, bad output) `dna`/`score` stay
+    # null and the real stats below still go out.
+    dna_result = ai_content_dna(_captions(post_items))
+
     return {
         "stats": _profile_stats(profile),
         "postTypeBreakdown": post_type_breakdown(post_items),
         "engagementInsight": engagement_by_type(post_items),
-        "dna": None,
-        "score": None,
+        "dna": (
+            {"vibe": dna_result["vibe"], "topThemes": dna_result["topThemes"]}
+            if dna_result
+            else None
+        ),
+        "score": (
+            {
+                "profileScore": dna_result["profileScore"],
+                "scoreLabel": dna_result["scoreLabel"],
+                "scoreExplanation": dna_result["scoreExplanation"],
+            }
+            if dna_result
+            else None
+        ),
     }
 
 
@@ -143,7 +175,10 @@ async def scan(
     _check_auth(authorization)
     handle = _clean_handle(body.username)
     try:
-        result = _run_scan(handle)
+        # `_run_scan` is fully blocking (Apify HTTP + the Content-DNA Claude
+        # call, which shells out to the `claude` CLI). Off the event loop it
+        # goes, or one scan freezes every other request.
+        result = await run_in_threadpool(_run_scan, handle)
     except ScanError:
         raise
     except Exception:
