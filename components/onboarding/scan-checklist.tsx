@@ -14,9 +14,11 @@ import {
 import { HapticPressable } from '@/components/haptic-pressable';
 import { GradientTick } from '@/components/onboarding/gradient';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth';
 import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
-import { ScanError, scanProfile } from '@/lib/scan';
+import { ScanError } from '@/lib/scan';
+import { scanProfileCached } from '@/lib/scan-cache';
 
 type Props = {
   /** Checklist row labels, e.g. ["Scanning your profile", …]. */
@@ -49,6 +51,8 @@ export function ScanChecklist({ rows, username, alreadyDone, onDone }: Props) {
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const { setScanResult } = useOnboarding();
+  const { session } = useAuth();
+  const uid = session?.user?.id ?? null;
 
   // Rows [0..doneCount-1] are complete; the row AT doneCount is the active one
   // showing a spinner. When doneCount === rows.length the whole list is done.
@@ -81,7 +85,7 @@ export function ScanChecklist({ rows, username, alreadyDone, onDone }: Props) {
     }, ROW_STAGGER_MS);
 
     try {
-      const result = await scanProfile(username);
+      const result = await scanProfileCached(username, uid);
       if (!mounted.current) return;
       stopStagger();
       setScanResult(result);
