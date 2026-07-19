@@ -13,6 +13,7 @@ import {
 
 import { HapticPressable } from '@/components/haptic-pressable';
 import { GradientTick } from '@/components/onboarding/gradient';
+import { useWaitingSwirl } from '@/components/waiting-swirl';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth';
 import { useOnboarding } from '@/contexts/onboarding';
@@ -59,6 +60,10 @@ export function ScanChecklist({ rows, username, alreadyDone, onDone }: Props) {
   const [doneCount, setDoneCount] = useState(alreadyDone ? rows.length : 0);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+
+  // The scan can run 30–90s, long past the point the cosmetic row stagger runs
+  // out — the looping swirl carries the wait from there.
+  useWaitingSwirl(running);
 
   // Guards so unmount / re-runs don't call setState on a dead component or
   // double-advance the stagger.

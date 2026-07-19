@@ -6,6 +6,7 @@ import { ActivityIndicator, Animated, StyleSheet, Text, TextStyle, View } from '
 import { Ionicons } from '@expo/vector-icons';
 
 import { GradientTick } from '@/components/onboarding/gradient';
+import { useWaitingSwirl } from '@/components/waiting-swirl';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
 
@@ -40,6 +41,9 @@ export function Personalising({ rows, durationMs, alreadyDone, onDone }: Props) 
   // doneCount === rows.length means the whole list is done.
   const [doneCount, setDoneCount] = useState(alreadyDone ? rows.length : 0);
   const [running, setRunning] = useState(!alreadyDone);
+
+  // Same waiting affordance as the real scan, so the two steps feel alike.
+  useWaitingSwirl(running);
 
   const mounted = useRef(true);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);

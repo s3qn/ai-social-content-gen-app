@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { CreateFab } from '@/components/create-fab';
 import { CreateOverlay } from '@/components/create-overlay';
 import { ScreenSwirl } from '@/components/screen-swirl';
+import { WaitingSwirl } from '@/components/waiting-swirl';
 import { SessionProvider, useAuth } from '@/contexts/auth';
 import { OnboardingProvider, useOnboarding } from '@/contexts/onboarding';
 import { ThemeProvider, useTheme } from '@/contexts/theme';
@@ -87,6 +88,7 @@ function ThemedRoot() {
       </SessionProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ScreenSwirl />
+      <WaitingSwirl />
       <CreateFab />
       <CreateOverlay />
     </NavThemeProvider>
