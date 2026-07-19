@@ -28,6 +28,11 @@ type StepBase = {
   id: string;
   /** Question shown in the mascot speech bubble. */
   mascotText: string;
+  /**
+   * F5 — mark a question as skippable: Continue is enabled even with no answer
+   * (honored in the driver's `isAnswered`). Used for the optional secondary goal.
+   */
+  optional?: boolean;
 };
 
 /** Single-select card list (pick exactly one). */
@@ -118,6 +123,34 @@ export type ContentDnaStep = StepBase & {
   type: 'content-dna';
 };
 
+/**
+ * F5 — "Personalising Your Growth Strategy" timed checklist. Purely COSMETIC:
+ * a self-contained timer ticks the rows over a few seconds, then enables
+ * Continue. It does NOT call any real fetch (unlike the F2 `scan` step). Its
+ * own component (`components/onboarding/personalising.tsx`) writes a 'done'
+ * marker to this step's answer when the timer completes.
+ */
+export type PersonalisingStep = StepBase & {
+  type: 'personalising';
+  /** Checklist row labels ticked one-by-one over `durationMs`. */
+  rows: string[];
+  /** Total run time before Continue enables (defaults to ~3.6s). */
+  durationMs?: number;
+};
+
+/**
+ * F5 — Projected Growth reveal. Reads the stored scan followers + the chosen
+ * `goal` answer and renders an illustrative Today→target projection chart.
+ * No answer is collected; a Continue advances the flow. Its component
+ * (`components/onboarding/growth-chart.tsx`) falls back gracefully if the scan
+ * result is missing.
+ */
+export type GrowthStep = StepBase & {
+  type: 'growth';
+  /** Answer key holding the chosen main goal (defaults to 'goal'). */
+  goalKey?: string;
+};
+
 export type OnboardingStep =
   | SingleSelectStep
   | MultiSelectStep
@@ -127,7 +160,9 @@ export type OnboardingStep =
   | InterstitialStep
   | CtaStep
   | ProfileSummaryStep
-  | ContentDnaStep;
+  | ContentDnaStep
+  | PersonalisingStep
+  | GrowthStep;
 
 /**
  * F1 — Connect. Two steps: pick the platform, then enter the handle. Kept short
@@ -332,5 +367,68 @@ export const onboardingSteps: OnboardingStep[] = [
     body: 'I’ve got a clear picture of who you are as a creator. Let’s build your plan.',
     buttonLabel: 'Continue',
     icon: 'sparkles',
+  },
+
+  // F5 — Goals & growth plan. Continues from the F4 Creator DNA close. Two goal
+  // questions (the second optional), a motivational interstitial, a cosmetic
+  // "personalising" timer, then the Projected Growth reveal (the temporary end;
+  // F6 appends the paywall + flips the router gate after this).
+  {
+    id: 'goal',
+    type: 'single-select',
+    mascotText: 'What’s your #1 goal right now?',
+    defaultValue: 'grow_following',
+    options: [
+      { value: 'grow_following', label: 'Grow my following', icon: 'trending-up-outline' },
+      { value: 'make_money', label: 'Make money', icon: 'cash-outline' },
+      { value: 'build_brand', label: 'Build a brand', icon: 'ribbon-outline' },
+      { value: 'more_engagement', label: 'Get more engagement', icon: 'heart-outline' },
+      { value: 'go_viral', label: 'Go viral', icon: 'flame-outline' },
+      { value: 'brand_deals', label: 'Land brand deals', icon: 'briefcase-outline' },
+    ],
+  },
+  {
+    id: 'goal_secondary',
+    type: 'single-select',
+    mascotText: 'Any secondary goal? Totally optional — skip if you like.',
+    optional: true,
+    options: [
+      { value: 'grow_following', label: 'Grow my following', icon: 'trending-up-outline' },
+      { value: 'make_money', label: 'Make money', icon: 'cash-outline' },
+      { value: 'build_brand', label: 'Build a brand', icon: 'ribbon-outline' },
+      { value: 'more_engagement', label: 'Get more engagement', icon: 'heart-outline' },
+      { value: 'go_viral', label: 'Go viral', icon: 'flame-outline' },
+      { value: 'brand_deals', label: 'Land brand deals', icon: 'briefcase-outline' },
+    ],
+  },
+  {
+    id: 'strategy_ready',
+    type: 'interstitial',
+    mascotText: 'Perfect — I’ve got what I need.',
+    defaultValue: 'yes',
+    headline: 'Let’s make it happen.',
+    body: 'I’ll turn everything you told me into a personal strategy built around your goals.',
+    options: [
+      { value: 'yes', label: 'Get my Personal Strategy' },
+      { value: 'later', label: 'One sec' },
+    ],
+  },
+  {
+    id: 'personalising',
+    type: 'personalising',
+    mascotText: 'Personalising Your Growth Strategy…',
+    durationMs: 3600,
+    rows: [
+      'Analysing your Creator DNA',
+      'Matching your goals to a plan',
+      'Picking your best content formats',
+      'Building your growth roadmap',
+    ],
+  },
+  {
+    id: 'growth',
+    type: 'growth',
+    mascotText: 'Here’s where this plan can take you.',
+    goalKey: 'goal',
   },
 ];

@@ -20,7 +20,9 @@ import { GradientButton, LEMON } from '@/components/onboarding/gradient';
 import { CtaCard } from '@/components/onboarding/cta-card';
 import { Interstitial } from '@/components/onboarding/interstitial';
 import { MascotBubble } from '@/components/onboarding/mascot-bubble';
+import { GrowthChart } from '@/components/onboarding/growth-chart';
 import { MultiSelect } from '@/components/onboarding/multi-select';
+import { Personalising } from '@/components/onboarding/personalising';
 import { ProfileSummary } from '@/components/onboarding/profile-summary';
 import { ScanChecklist } from '@/components/onboarding/scan-checklist';
 import { Segmented } from '@/components/onboarding/segmented';
@@ -143,6 +145,9 @@ export default function OnboardingDriver() {
 
 /** Continue/Finish is enabled only when the current step has a valid answer. */
 function isAnswered(step: OnboardingStep, answer: unknown): boolean {
+  // F5 — an `optional` step never blocks Continue, whatever its type (e.g. the
+  // skippable secondary goal). Checked before the per-type rules below.
+  if (step.optional) return true;
   switch (step.type) {
     case 'text':
       return typeof answer === 'string' && answer.trim().length > 0;
@@ -155,9 +160,13 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
     case 'scan':
       // The ScanChecklist writes a truthy marker here once the fetch resolves.
       return answer === 'done';
+    case 'personalising':
+      // The Personalising timer writes 'done' once it finishes (same as scan).
+      return answer === 'done';
     case 'cta':
     case 'profile-summary':
     case 'content-dna':
+    case 'growth':
       // Reveal / CTA steps collect no answer — the button just advances the flow.
       return true;
   }
@@ -221,6 +230,22 @@ function renderStep(
           username={(answers[step.usernameKey ?? 'username'] as string | undefined) ?? ''}
           alreadyDone={answers[step.id] === 'done'}
           onDone={() => setAnswer(step.id, 'done')}
+        />
+      );
+    case 'personalising':
+      return (
+        <Personalising
+          rows={step.rows}
+          durationMs={step.durationMs}
+          alreadyDone={answers[step.id] === 'done'}
+          onDone={() => setAnswer(step.id, 'done')}
+        />
+      );
+    case 'growth':
+      return (
+        <GrowthChart
+          goal={answers[step.goalKey ?? 'goal'] as string | undefined}
+          onRescan={goToScan}
         />
       );
     case 'cta':
