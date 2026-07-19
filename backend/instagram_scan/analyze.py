@@ -3,6 +3,7 @@
 Given the raw post list from apify/instagram-scraper, compute:
   - post-type breakdown: % of posts that are image / carousel / reel
   - engagement-by-type: average (likes + comments) per post type
+  - top posts: the best-performing posts, as embeddable shortcodes (`top_posts`)
   - AI Content DNA: vibe / themes / creator score, via one Claude call over the
     post captions (`ai_content_dna`)
 
@@ -20,6 +21,7 @@ None, so /scan still returns the real deterministic stats.
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from typing import Any
@@ -116,6 +118,85 @@ def engagement_by_type(posts: list[dict[str, Any]]) -> dict[str, Any]:
         )
 
     return {"avgEngagement": avg, "bestType": best}
+
+
+# --- Top posts ---------------------------------------------------------------
+
+# An Instagram shortcode is the stable id in /p/<shortCode>/. The app builds a
+# link by interpolating it into a URL, so validate it HERE, at the point it
+# enters our system, rather than trusting scraped data downstream. Real
+# shortcodes are ~11 chars of [A-Za-z0-9_-]; the bounds are loose for drift.
+SHORTCODE_RE = re.compile(r"^[A-Za-z0-9_-]{5,30}$")
+
+# The client shows these in a sideways-scrolling rail, so send more than fit on
+# screen. Capped below main.POSTS_LIMIT (20), which is all we ever fetch.
+TOP_POSTS_LIMIT = 12
+
+
+def _positive_int(value: Any) -> int:
+    """Apify uses -1 for hidden counts; treat anything not positive as 0."""
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 0
+
+
+def _thumbnail(post: dict[str, Any]) -> str | None:
+    """The post's preview image (a video's cover frame for reels).
+
+    NOTE: this is a SIGNED CDN link that expires within days, while the client
+    caches a scan for 7. The app therefore treats a broken image as normal and
+    falls back to a placeholder tile rather than hiding the post. Only https is
+    accepted: the value is scraped and ends up in an image request.
+    """
+    url = post.get("displayUrl")
+    if isinstance(url, str) and url.startswith("https://"):
+        return url
+    return None
+
+
+def top_posts(posts: list[dict[str, Any]], limit: int = TOP_POSTS_LIMIT) -> list[dict[str, Any]]:
+    """Return the `limit` best-performing posts, ready to render as tiles.
+
+    Shape:
+        [{"shortCode": "AbC123_-x", "type": "reel", "likes": 1240,
+          "comments": 38, "views": 12400, "thumbnailUrl": "https://..."}]
+
+    Ranked by the same likes+comments measure `engagement_by_type` uses, so the
+    "your top posts" rail agrees with the engagement insight shown near it.
+    Posts without a valid shortcode, or that `_classify` can't type, are dropped:
+    without a shortcode there is nothing to link to. Returns [] when nothing
+    qualifies (the app hides the section entirely in that case).
+
+    `views` is None for stills; `thumbnailUrl` is None if Apify gave us nothing
+    usable. Neither absence drops the post: the client renders a placeholder.
+    Captions are still deliberately excluded: no untrusted text reaches the app.
+    """
+    usable: list[dict[str, Any]] = []
+    for post in posts or []:
+        short_code = post.get("shortCode")
+        if not isinstance(short_code, str) or not SHORTCODE_RE.match(short_code):
+            continue
+        kind = _classify(post)
+        if kind is None:
+            continue
+
+        # Apify has used both keys across actor versions; take whichever is set.
+        views = _positive_int(post.get("videoViewCount")) or _positive_int(
+            post.get("videoPlayCount")
+        )
+
+        usable.append(
+            {
+                "shortCode": short_code,
+                "type": kind,
+                "likes": _positive_int(post.get("likesCount")),
+                "comments": _positive_int(post.get("commentsCount")),
+                # Stills have no view count, null rather than a misleading 0.
+                "views": views if kind == "reel" and views else None,
+                "thumbnailUrl": _thumbnail(post),
+            }
+        )
+
+    usable.sort(key=lambda p: p["likes"] + p["comments"], reverse=True)
+    return usable[: max(0, limit)]
 
 
 # --- AI Content DNA (Claude) -------------------------------------------------

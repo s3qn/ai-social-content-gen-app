@@ -5,9 +5,16 @@ POST /scan  {"username": "..."}  ->
       "stats": {followers, following, posts, fullName, avatarUrl},
       "postTypeBreakdown": {...},
       "engagementInsight": {...},
+      "topPosts": [{shortCode, type, likes, comments, views, thumbnailUrl}],
       "dna":   {vibe, topThemes} | null,
       "score": {profileScore, scoreLabel, scoreExplanation} | null,
     }
+
+`topPosts` is the best-performing posts, which the app renders as a sideways
+rail of thumbnail tiles under the Content DNA reveal, each linking out to
+Instagram. It is always a list (never null): it needs no AI, so it has no
+failure mode to model. `views` is null for stills, and `thumbnailUrl` is a
+SIGNED CDN link that expires within days (the app falls back to a placeholder).
 
 `dna` / `score` come from analyze.ai_content_dna(). That call is best-effort:
 if the Anthropic key is missing or the call fails, both stay null and the real
@@ -30,7 +37,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from analyze import ai_content_dna, engagement_by_type, post_type_breakdown
+from analyze import ai_content_dna, engagement_by_type, post_type_breakdown, top_posts
 from scraper import fetch_posts, fetch_profile, load_apify_api_key
 
 load_dotenv(find_dotenv())
@@ -145,6 +152,7 @@ def _run_scan(handle: str) -> dict:
         "stats": _profile_stats(profile),
         "postTypeBreakdown": post_type_breakdown(post_items),
         "engagementInsight": engagement_by_type(post_items),
+        "topPosts": top_posts(post_items),
         "dna": (
             {"vibe": dna_result["vibe"], "topThemes": dna_result["topThemes"]}
             if dna_result

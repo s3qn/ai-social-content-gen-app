@@ -47,6 +47,25 @@ export type ContentDna = {
   topThemes: string[];
 };
 
+/** One of the account's best-performing posts, rendered as a tappable tile. */
+export type TopPost = {
+  /** The stable id in instagram.com/p/<shortCode>/ (validated server-side). */
+  shortCode: string;
+  type: 'image' | 'carousel' | 'reel';
+  likes: number;
+  comments: number;
+  /** Play count. Null/absent for stills, never render it as 0 views. */
+  views?: number | null;
+  /**
+   * Preview image (a reel's cover frame). OPTIONAL and EXPIRING: Instagram signs
+   * these CDN links and they die within days, while this payload is persisted
+   * (localStorage + the 7-day Supabase cache in lib/scan-cache.ts). The tile
+   * falls back to a placeholder instead of disappearing: the shortcode, and so
+   * the link out to Instagram, always keeps working.
+   */
+  thumbnailUrl?: string | null;
+};
+
 /** Claude-derived creator score. Null under the same conditions as `dna`. */
 export type ProfileScore = {
   profileScore: number; // 0–10, one decimal
@@ -61,6 +80,14 @@ export type ScanResult = {
   engagementInsight: EngagementInsight;
   dna: ContentDna | null;
   score: ProfileScore | null;
+  /**
+   * Best-performing posts, newest backend only. OPTIONAL because older payloads
+   * predate the field: the Supabase scan cache holds results for 7 days
+   * (lib/scan-cache.ts) and contexts/onboarding.tsx rehydrates them from local
+   * storage, so the app must tolerate its absence rather than assume a fresh
+   * backend. Consumers treat missing/empty the same way: hide the section.
+   */
+  topPosts?: TopPost[];
 };
 
 /** Machine-readable failure category, used by the UI to pick a message. */

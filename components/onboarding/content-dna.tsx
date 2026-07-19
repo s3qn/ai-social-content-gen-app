@@ -4,9 +4,11 @@ import { StyleSheet, Text, TextStyle, View } from 'react-native';
 import { Chip } from '@/components/onboarding/chip';
 import { DnaBar } from '@/components/onboarding/dna-bar';
 import { RevealFallback } from '@/components/onboarding/reveal-fallback';
+import { TopPosts } from '@/components/onboarding/top-posts';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
+import type { TopPost } from '@/lib/scan';
 
 type Props = {
   onRescan?: () => void;
@@ -39,10 +41,35 @@ function vibeChips(vibe: string): string[] {
 }
 
 /**
+ * Backstop only: the backend already caps at TOP_POSTS_LIMIT (12). Kept so a
+ * hand-edited or future payload can't render an unbounded rail.
+ */
+const MAX_TILES = 12;
+
+/**
+ * Keep only posts we can actually link to. `topPosts` is optional on ScanResult:
+ * a result cached before the field existed (7-day Supabase cache, or a payload
+ * rehydrated from local storage) simply has none, and must degrade to "no
+ * section" rather than render blanks.
+ */
+function usableTopPosts(raw: unknown): TopPost[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (p): p is TopPost =>
+        !!p && typeof p === 'object' && typeof (p as TopPost).shortCode === 'string',
+    )
+    .filter((p) => !!p.shortCode.trim())
+    .slice(0, MAX_TILES);
+}
+
+/**
  * F3, Content DNA reveal. The post-type DnaBar + engagement insight are always
  * REAL scan data. The vibe chips + top themes come from the backend's Claude
  * analysis (`scanResult.dna`) when present, and fall back to STUB_DNA when it's
- * null. Falls back to RevealFallback if there's no scan result at all.
+ * null. Top posts are a sideways rail of thumbnails shown under the mix they
+ * evidence, and are omitted entirely when the scan has none. Falls back to
+ * RevealFallback if there's no scan result at all.
  */
 export function ContentDna({ onRescan }: Props) {
   const { palette } = useTheme();
@@ -59,6 +86,7 @@ export function ContentDna({ onRescan }: Props) {
     : [];
 
   const vibe = useMemo(() => (realVibe ? vibeChips(realVibe) : STUB_DNA.vibe), [realVibe]);
+  const topPosts = useMemo(() => usableTopPosts(scanResult?.topPosts), [scanResult?.topPosts]);
 
   if (!scanResult) return <RevealFallback onRescan={onRescan} />;
 
@@ -71,6 +99,16 @@ export function ContentDna({ onRescan }: Props) {
           engagement={scanResult.engagementInsight}
         />
       </View>
+
+      {/* Straight after the mix: the posts are the evidence for the percentages
+          above them. Omitted entirely when the scan produced none, so the step
+          falls back to its original layout. */}
+      {topPosts.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.eyebrow}>Your Top Posts</Text>
+          <TopPosts posts={topPosts} />
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.eyebrow}>Your Vibe</Text>
