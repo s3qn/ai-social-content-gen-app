@@ -94,6 +94,22 @@ export type CtaStep = StepBase & {
   icon?: IoniconName;
 };
 
+/**
+ * F3 — Reveal steps. Both consume the stored scan result from the onboarding
+ * context (they take no extra config beyond the shared mascot header). No answer
+ * is collected; a Continue/Finish advances the flow.
+ *
+ * `profile-summary` — real StatTrio + heuristic ScoreMeter + verdict.
+ * `content-dna` — real post-type DnaBar + engagement insight + stubbed vibe/themes.
+ */
+export type ProfileSummaryStep = StepBase & {
+  type: 'profile-summary';
+};
+
+export type ContentDnaStep = StepBase & {
+  type: 'content-dna';
+};
+
 export type OnboardingStep =
   | SingleSelectStep
   | MultiSelectStep
@@ -101,7 +117,9 @@ export type OnboardingStep =
   | TextStep
   | ScanStep
   | InterstitialStep
-  | CtaStep;
+  | CtaStep
+  | ProfileSummaryStep
+  | ContentDnaStep;
 
 /**
  * F1 — Connect. Two steps: pick the platform, then enter the handle. Kept short
@@ -171,5 +189,18 @@ export const onboardingSteps: OnboardingStep[] = [
     body: 'See your real stats, engagement and a personalised score.',
     buttonLabel: 'Unlock Profile Summary',
     icon: 'sparkles',
+  },
+
+  // F3 — Reveal. The unlock CTA leads into the Profile Summary, then Content DNA.
+  // Content DNA is the last step for now; the quiz (F4) will continue from here.
+  {
+    id: 'profile_summary',
+    type: 'profile-summary',
+    mascotText: 'Here’s how your profile is doing right now.',
+  },
+  {
+    id: 'content_dna',
+    type: 'content-dna',
+    mascotText: 'And this is your Content DNA — what you post and how it lands.',
   },
 ];

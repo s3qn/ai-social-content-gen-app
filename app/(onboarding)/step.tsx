@@ -15,10 +15,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
+import { ContentDna } from '@/components/onboarding/content-dna';
 import { CtaCard } from '@/components/onboarding/cta-card';
 import { Interstitial } from '@/components/onboarding/interstitial';
 import { MascotBubble } from '@/components/onboarding/mascot-bubble';
 import { MultiSelect } from '@/components/onboarding/multi-select';
+import { ProfileSummary } from '@/components/onboarding/profile-summary';
 import { ScanChecklist } from '@/components/onboarding/scan-checklist';
 import { Segmented } from '@/components/onboarding/segmented';
 import { SingleSelect } from '@/components/onboarding/single-select';
@@ -52,6 +54,13 @@ export default function OnboardingDriver() {
   const goBack = () => {
     if (index > 0) setIndex((i) => i - 1);
     else router.back(); // leave the group (back to Settings in F1)
+  };
+
+  // Jump straight back to the scan step — used by the reveal fallbacks when the
+  // scan result is missing so the flow can recover instead of dead-ending.
+  const goToScan = () => {
+    const scanIndex = onboardingSteps.findIndex((s) => s.type === 'scan');
+    setIndex(scanIndex >= 0 ? scanIndex : 0);
   };
 
   const goNext = () => {
@@ -91,7 +100,9 @@ export default function OnboardingDriver() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <MascotBubble text={step.mascotText} />
-        <View style={styles.stepArea}>{renderStep(step, answers, setAnswer, styles, palette)}</View>
+        <View style={styles.stepArea}>
+          {renderStep(step, answers, setAnswer, styles, palette, goToScan)}
+        </View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
@@ -116,7 +127,9 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
       // The ScanChecklist writes a truthy marker here once the fetch resolves.
       return answer === 'done';
     case 'cta':
-      // No answer to collect — the button just advances the flow.
+    case 'profile-summary':
+    case 'content-dna':
+      // Reveal / CTA steps collect no answer — the button just advances the flow.
       return true;
   }
 }
@@ -134,6 +147,7 @@ function renderStep(
   setAnswer: (key: string, value: unknown) => void,
   styles: ReturnType<typeof makeStyles>,
   palette: AppPalette,
+  goToScan: () => void,
 ) {
   switch (step.type) {
     case 'single-select':
@@ -182,6 +196,10 @@ function renderStep(
       );
     case 'cta':
       return <CtaCard body={step.body} icon={step.icon} />;
+    case 'profile-summary':
+      return <ProfileSummary onRescan={goToScan} />;
+    case 'content-dna':
+      return <ContentDna onRescan={goToScan} />;
     case 'text':
       // No container box — the "@" prefix + field float directly on the themed
       // background. Big font + tall touch target; caret/selection use the accent.
