@@ -12,8 +12,11 @@ import { useTheme } from '@/contexts/theme';
 export const CURVE_DEPTH = 28;
 
 // Fraction of the hill that stays fully opaque before it begins dissolving into
-// the page. Everything below melts out, so there is no hard color seam.
-const FADE_START = 0.55;
+// the page. Everything below melts out, so there is no hard color seam. Kept
+// below the control row: the pill/gear are painted outside the mask at full
+// opacity, so if the dissolve started above them their backdrop would wash out
+// toward the page tint and the pill's scrim would lose its edge.
+const FADE_START = 0.7;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -84,7 +87,13 @@ export function HillHeader({ height = 72, style, children }: HillHeaderProps) {
           <Path d={d} fill="url(#hillSheen)" />
         </G>
       </Svg>
-      <View style={[styles.content, { paddingTop: insets.top + Spacing.sm, height }]}>
+      {/*
+        Pad by the inset only and span the full header, so the row centres in the
+        `height` band below the status bar. Padding by `insets.top + sm` while
+        capping the box at `height` left ~5pt of usable room on a Dynamic Island
+        device once `height` dropped to 72, pushing the row down into the fade.
+      */}
+      <View style={[styles.content, { paddingTop: insets.top, height: solidH }]}>
         {children}
       </View>
     </View>

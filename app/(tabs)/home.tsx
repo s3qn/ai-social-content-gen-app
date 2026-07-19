@@ -25,8 +25,7 @@ export default function HomeScreen() {
       header={
         <>
           <InstagramPill theme={theme} account={account} onPress={toggleConnect} />
-          {/* Virlo's hill is light lime in light mode, so the gear takes dark ink. */}
-          <SettingsGear color={theme.onHill} />
+          <SettingsGear />
         </>
       }>
       <SectionHeading>STATS</SectionHeading>

@@ -13,10 +13,18 @@ import { CURVE_DEPTH, HillHeader } from '@/components/hill-header';
 import { HillFooter } from '@/components/hill-footer';
 import { CharacterId } from '@/constants/characters';
 import { Fonts, Radius, Spacing, TAB_BAR_CLEARANCE, Type } from '@/constants/theme';
-import { INPUT, ON_HILL, RAMPS, themeIndex, transitionToCharacter } from '@/constants/theme-transition';
+import {
+  INPUT,
+  inkIndexFor,
+  RAMPS,
+  themeIndex,
+  transitionToCharacter,
+} from '@/constants/theme-transition';
 import { useTheme } from '@/contexts/theme';
 
 const FOOTER_HEIGHT = 132;
+
+const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 type ThemedScreenProps = {
   /** Which character owns this tab — drives the focus color transition. */
@@ -68,24 +76,43 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
   );
 }
 
-/** Title shown on the hill header (left side). See `SettingsGear` re: `color`. */
-export function HeaderTitle({ title, color = ON_HILL }: { title: string; color?: string }) {
-  return <Text style={[styles.headerTitle, { color }]}>{title}</Text>;
+/**
+ * Animated style for ink sitting on the hill.
+ *
+ * Every `HillHeader` reads the same global `themeIndex`, so a screen's hill is
+ * mid-morph toward another character's hue during the 450ms tab fade. Ink
+ * resolved statically per screen therefore goes wrong mid-transition — white on
+ * Virlo's light lime, or Virlo's dark ink on a still-dark hill. Driving ink from
+ * the same value keeps the two in lockstep. It *steps* rather than blends; see
+ * `INK_STEP` for why interpolating ink is unreadable at the crossover.
+ */
+export function useOnHillInk() {
+  'use no memo';
+  const { scheme } = useTheme();
+  const { ON_HILL_INKS } = RAMPS[scheme];
+  return useAnimatedStyle(
+    () => ({ color: ON_HILL_INKS[inkIndexFor(themeIndex.value)] }),
+    [scheme],
+  );
 }
 
-/**
- * Settings gear for the hill header (right side). Defaults to white, which suits
- * the three dark hills; a screen whose hill is light (Virlo's lime) passes its
- * character's `onHill` so the icon stays legible.
- */
-export function SettingsGear({ color = ON_HILL }: { color?: string }) {
+/** Title shown on the hill header (left side). Ink self-drives with the hill. */
+export function HeaderTitle({ title }: { title: string }) {
+  'use no memo';
+  return <Animated.Text style={[styles.headerTitle, useOnHillInk()]}>{title}</Animated.Text>;
+}
+
+/** Settings gear for the hill header (right side). Ink self-drives with the hill. */
+export function SettingsGear() {
+  'use no memo';
   const router = useRouter();
   return (
     <HapticPressable
       hitSlop={12}
       style={({ pressed }) => pressed && styles.pressed}
       onPress={() => router.push('/settings')}>
-      <Ionicons name="settings-outline" size={22} color={color} />
+      {/* Ionicons renders a Text, so an animated `color` style tints the glyph. */}
+      <AnimatedIonicons name="settings-outline" size={22} style={useOnHillInk()} />
     </HapticPressable>
   );
 }
@@ -128,7 +155,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...(Type.heading as TextStyle),
-    color: ON_HILL,
     fontWeight: '700',
   },
   pressed: {

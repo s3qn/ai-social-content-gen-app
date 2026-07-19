@@ -40,7 +40,37 @@ export type Ramps = {
   BG_TINT: string[];
   /** One ramp per footer ridge, back-to-front — derived from `footerHills`. */
   FOOTER_RAMPS: string[][];
+  /** Ink on the hill, one entry per character — stepped, never interpolated. */
+  ON_HILL_INKS: string[];
+  /** Header pill scrim, one entry per character — stepped, never interpolated. */
+  PILL_SCRIMS: string[];
 };
+
+/**
+ * Where on-hill ink swaps between Virlo's dark and the other characters' white.
+ *
+ * Ink **steps**; it is never interpolated. Virlo's hill is light lime and the other
+ * three are dark, and any continuous dark→white tween necessarily passes through
+ * mid-grey at the same moment the hill is itself mid-morph — measured at ~1.0:1
+ * contrast, i.e. the glyph disappears. Narrowing the blend band does not fix this,
+ * it only shortens the blind spot: a 0.50→0.62 band bottomed out at 1.02:1, and
+ * tightening it to 0.74→0.76 still bottomed out at 1.03:1. A hard step has no
+ * intermediate value to land on.
+ *
+ * 0.75 is the crossover where dark and white ink are equally legible against the
+ * morphing hill (~3.9:1 each), so the swap never lands at the worst moment.
+ */
+export const INK_STEP = 0.75;
+
+/**
+ * Index of the character whose on-hill ink applies at a given `themeIndex`.
+ * Worklet-safe: plain arithmetic over constants, no captured objects.
+ */
+export function inkIndexFor(value: number): number {
+  'worklet';
+  if (value < INK_STEP) return 0;
+  return Math.min(3, Math.max(1, Math.round(value)));
+}
 
 function buildRamps(reg: Record<CharacterId, CharacterTheme>): Ramps {
   const PRIMARY = CHAR_ORDER.map((id) => reg[id].primary);
@@ -51,7 +81,9 @@ function buildRamps(reg: Record<CharacterId, CharacterTheme>): Ramps {
   const FOOTER_RAMPS = Array.from({ length: FOOTER_LAYER_COUNT }, (_, layer) =>
     CHAR_ORDER.map((id) => reg[id].footerHills[layer]),
   );
-  return { PRIMARY, HILL, HILL_TOP, BG_TINT, FOOTER_RAMPS };
+  const ON_HILL_INKS = CHAR_ORDER.map((id) => reg[id].onHill);
+  const PILL_SCRIMS = CHAR_ORDER.map((id) => reg[id].pillScrim);
+  return { PRIMARY, HILL, HILL_TOP, BG_TINT, FOOTER_RAMPS, ON_HILL_INKS, PILL_SCRIMS };
 }
 
 // Both ramp sets are derived once at module load and kept as frozen arrays. The
