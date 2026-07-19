@@ -31,7 +31,16 @@ git -C "$REPO" worktree add -b "$BRANCH" "$WT" main >&2
 
 # Share dependencies and secrets from the main checkout (both are gitignored, so
 # the fresh worktree lacks them).
-ln -s "$REPO/node_modules" "$WT/node_modules"
+#
+# node_modules is HARDLINK-COPIED (cp -al), not symlinked. A symlink pointing at
+# the main checkout resolves to a path OUTSIDE this worktree, which makes Metro
+# push its server root up to the common parent (…/app-projects) and hand the
+# device a broken entry path like `./social-ai/node_modules/expo-router/entry`
+# (Unable to resolve module … on scan). A hardlink copy lives physically inside
+# the worktree — same inodes, ~1s, near-zero extra disk on one filesystem — so
+# Metro keeps its server root at the worktree and the entry resolves. `-a`
+# preserves inner .bin symlinks as-is.
+cp -al "$REPO/node_modules" "$WT/node_modules"
 if [ -e "$REPO/.env" ]; then
   ln -s "$REPO/.env" "$WT/.env"
 else

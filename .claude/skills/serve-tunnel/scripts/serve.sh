@@ -55,6 +55,18 @@ for ((i = 0; i < POLL_SECONDS; i++)); do
     break
   fi
   EXP_URL="$(grep -oE "$EXP_RE" "$LOG" | head -n1 || true)"
+  # Expo SDK 54 in tunnel mode frequently never prints the exp://…exp.direct
+  # line this greps for, so the poll would time out and (wrongly) mark the slot
+  # "failed" even though the tunnel is up. Fall back to ngrok's local inspector
+  # API, which reliably reports the public host; match this feature's own PORT.
+  if [ -z "$EXP_URL" ]; then
+    for insp in 4040 4041 4042 4043; do
+      EXP_URL="$(curl -s -m 3 "localhost:$insp/api/tunnels" 2>/dev/null \
+        | grep -oE "https://[a-z0-9]+-anonymous-${PORT}\.exp\.direct" | head -n1 \
+        | sed 's,^https,exp,' || true)"
+      [ -n "$EXP_URL" ] && break
+    done
+  fi
   [ -n "$EXP_URL" ] && break
   if grep -qiE "$FAIL_RE" "$LOG"; then
     echo "serve.sh: tunnel failure signature in log:" >&2

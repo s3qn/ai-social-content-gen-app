@@ -1,5 +1,18 @@
 {
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  
+  "permissions": {
+    "defaultMode": "auto",
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(curl *)",
+      "Bash(git push --force *)",
+      "Bash(chmod *)",
+      "Read(~/.ssh/*)",
+      "Read(*.env)"
+    ]
   }
 }

@@ -43,6 +43,9 @@ yarn-error.*
 __pycache__/
 *.pyc
 
+# Claude Code worktrees (live git worktrees — never commit these)
+.claude/worktrees/
+
 app-example
 
 # generated native folders

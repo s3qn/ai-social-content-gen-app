@@ -39,11 +39,20 @@ brief is: own this feature end-to-end. It must:
 WT=$(bash "$SKILL_DIR/scripts/worktree-create.sh" "<feature name>")   # captures worktree path
 # ...edit files under $WT to build the feature, IN-PLACE and UNCOMMITTED...
 bash "$REPO/.claude/skills/serve-tunnel/scripts/serve.sh" "$WT" "<feature name>"
+
+# Then write a test checklist for THIS feature so it shows under the QR on the
+# dashboard. Base the items on what you actually built this session — the main
+# happy path, each new UI element/field, edge cases and error states, anything
+# risky. Short "verify X" phrases; use the feature's own slug.
+echo '["verify …","verify …"]' \
+  | node "$REPO/.claude/skills/serve-tunnel/scripts/write-checklist.js" --slug "<slug>"
 ```
 
 `serve.sh` refuses (exit 2) if 3 tunnels are already active. So admit **≤3
 features into the serve step at a time**; a 4th waits until a slot frees at an
 Accept/Delete below. Keep each subagent alive (you'll continue it on Adjust).
+On **Adjust**, re-run `write-checklist.js` if the change adds anything new to test
+(it replaces the slug's items and resets the boxes).
 
 ### 4. Test gate — per feature
 When a feature is `ready` (its QR is on `https://dev.sean.build`), ask the user
