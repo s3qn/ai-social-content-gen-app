@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -13,9 +14,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
 import { ContentDna } from '@/components/onboarding/content-dna';
+import { GradientButton, LEMON } from '@/components/onboarding/gradient';
 import { CtaCard } from '@/components/onboarding/cta-card';
 import { Interstitial } from '@/components/onboarding/interstitial';
 import { MascotBubble } from '@/components/onboarding/mascot-bubble';
@@ -108,7 +109,14 @@ export default function OnboardingDriver() {
 
         {/* Progress bar — fills as the user advances through the steps. */}
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]} />
+          <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]}>
+            <LinearGradient
+              colors={LEMON}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
         </View>
 
         <Text style={styles.counter}>
@@ -127,7 +135,7 @@ export default function OnboardingDriver() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
-        <BlackButton label={continueLabel(step, isLast)} onPress={goNext} disabled={!answered} />
+        <GradientButton label={continueLabel(step, isLast)} onPress={goNext} disabled={!answered} />
       </View>
     </KeyboardAvoidingView>
   );

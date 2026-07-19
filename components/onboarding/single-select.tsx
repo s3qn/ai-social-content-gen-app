@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { HapticPressable } from '@/components/haptic-pressable';
+import { GradientTick } from '@/components/onboarding/gradient';
 import { SelectOption } from '@/constants/onboarding-steps';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
@@ -45,7 +46,7 @@ export function SingleSelect({ options, value, onChange }: Props) {
             ) : null}
             <Text style={[styles.label, selected && styles.labelSelected]}>{opt.label}</Text>
             {selected ? (
-              <Ionicons name="checkmark-circle" size={22} color={palette.accent} />
+              <GradientTick size={22} shape="circle" />
             ) : (
               <View style={styles.checkSpacer} />
             )}

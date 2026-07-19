@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { HapticPressable } from '@/components/haptic-pressable';
+import { GradientTick } from '@/components/onboarding/gradient';
 import { SelectOption } from '@/constants/onboarding-steps';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
@@ -56,11 +57,11 @@ export function MultiSelect({ options, value, onChange, max }: Props) {
               />
             ) : null}
             <Text style={[styles.label, selected && styles.labelSelected]}>{opt.label}</Text>
-            <Ionicons
-              name={selected ? 'checkbox' : 'square-outline'}
-              size={22}
-              color={selected ? palette.accent : palette.muted}
-            />
+            {selected ? (
+              <GradientTick size={22} shape="square" />
+            ) : (
+              <Ionicons name="square-outline" size={22} color={palette.muted} />
+            )}
           </HapticPressable>
         );
       })}

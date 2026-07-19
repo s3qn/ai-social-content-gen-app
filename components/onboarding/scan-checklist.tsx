@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { HapticPressable } from '@/components/haptic-pressable';
+import { GradientTick } from '@/components/onboarding/gradient';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
@@ -173,7 +174,7 @@ function Row({
       <View style={styles.icon}>
         {done ? (
           <Animated.View style={{ opacity }}>
-            <Ionicons name="checkmark-circle" size={24} color={palette.accent} />
+            <GradientTick size={24} shape="circle" />
           </Animated.View>
         ) : active ? (
           <ActivityIndicator size="small" color={palette.accent} />
