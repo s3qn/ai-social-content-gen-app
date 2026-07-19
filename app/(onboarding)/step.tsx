@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -50,6 +50,27 @@ export default function OnboardingDriver() {
 
   const answered = isAnswered(step, answers[step.id]);
   const isLast = index === total - 1;
+
+  // F4 — seed a sensible default the first time a step is shown so the user only
+  // has to adjust, not pick from scratch (Continue is immediately enabled). Runs
+  // once per step (keyed on index/id); no-op if the step has a stored answer or
+  // carries no default. Only writes when the current answer is empty.
+  useEffect(() => {
+    const current = answers[step.id];
+    const isEmpty =
+      current === undefined ||
+      current === '' ||
+      (Array.isArray(current) && current.length === 0);
+    if (!isEmpty) return;
+    if ('defaultValues' in step && step.defaultValues && step.defaultValues.length > 0) {
+      setAnswer(step.id, step.defaultValues);
+    } else if ('defaultValue' in step && step.defaultValue) {
+      setAnswer(step.id, step.defaultValue);
+    }
+    // Intentionally keyed only on the step so the seed happens once per step and
+    // never clobbers a user's later edit back to empty.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, step.id]);
 
   const goBack = () => {
     if (index > 0) setIndex((i) => i - 1);

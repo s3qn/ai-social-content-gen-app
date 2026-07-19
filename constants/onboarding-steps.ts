@@ -34,6 +34,8 @@ type StepBase = {
 export type SingleSelectStep = StepBase & {
   type: 'single-select';
   options: SelectOption[];
+  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  defaultValue?: string;
 };
 
 /** Multi-select card list with optional min/max (F3–F6). */
@@ -42,12 +44,16 @@ export type MultiSelectStep = StepBase & {
   options: SelectOption[];
   min?: number;
   max?: number;
+  /** F4 — option `value`s seeded on first view so the user only has to adjust. */
+  defaultValues?: string[];
 };
 
 /** Segmented control — Often/Sometimes/Never, Yes/No (F4+). */
 export type SegmentedStep = StepBase & {
   type: 'segmented';
   options: SelectOption[];
+  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  defaultValue?: string;
 };
 
 /** Free-text entry (e.g. the @username). */
@@ -80,6 +86,8 @@ export type InterstitialStep = StepBase & {
   headline: string;
   body?: string;
   options: SelectOption[];
+  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  defaultValue?: string;
 };
 
 /**
@@ -202,5 +210,127 @@ export const onboardingSteps: OnboardingStep[] = [
     id: 'content_dna',
     type: 'content-dna',
     mascotText: 'And this is your Content DNA — what you post and how it lands.',
+  },
+
+  // F4 — Creator DNA quiz. Continues from the F3 Content DNA reveal and profiles
+  // the creator's niche, topics, style, habits and gear. All config-driven and
+  // reusing the F1/F2 archetypes; answers persist by `id`. The closing card
+  // (dna_complete) is a plain CTA that just advances — it deliberately does NOT
+  // call complete(); that belongs to F6's paywall, which appends after this.
+  {
+    id: 'niche',
+    type: 'single-select',
+    mascotText: 'What best describes your niche?',
+    defaultValue: 'lifestyle_vlogs',
+    options: [
+      { value: 'fashion_beauty', label: 'Fashion & Beauty', icon: 'shirt-outline' },
+      { value: 'fitness_health', label: 'Fitness & Health', icon: 'barbell-outline' },
+      { value: 'food_cooking', label: 'Food & Cooking', icon: 'restaurant-outline' },
+      { value: 'travel', label: 'Travel', icon: 'airplane-outline' },
+      { value: 'tech_gaming', label: 'Tech & Gaming', icon: 'game-controller-outline' },
+      { value: 'business_finance', label: 'Business & Finance', icon: 'briefcase-outline' },
+      { value: 'comedy_entertainment', label: 'Comedy & Entertainment', icon: 'happy-outline' },
+      { value: 'lifestyle_vlogs', label: 'Lifestyle & Vlogs', icon: 'sunny-outline' },
+      { value: 'education', label: 'Education', icon: 'school-outline' },
+      { value: 'art_design', label: 'Art & Design', icon: 'color-palette-outline' },
+    ],
+  },
+  {
+    id: 'niche_subtopics',
+    type: 'multi-select',
+    mascotText: 'Which of these do you cover? Pick any that fit.',
+    min: 1,
+    defaultValues: ['tips_howtos', 'behind_the_scenes'],
+    options: [
+      { value: 'tips_howtos', label: 'Tips & how-tos', icon: 'bulb-outline' },
+      { value: 'reviews', label: 'Product reviews', icon: 'pricetag-outline' },
+      { value: 'behind_the_scenes', label: 'Behind the scenes', icon: 'aperture-outline' },
+      { value: 'trends_news', label: 'Trends & news', icon: 'trending-up-outline' },
+      { value: 'tutorials', label: 'Tutorials', icon: 'construct-outline' },
+      { value: 'qa_advice', label: 'Q&A / advice', icon: 'chatbubbles-outline' },
+      { value: 'storytelling', label: 'Storytelling', icon: 'book-outline' },
+      { value: 'challenges', label: 'Challenges', icon: 'flame-outline' },
+    ],
+  },
+  {
+    id: 'personal_topics',
+    type: 'multi-select',
+    mascotText: 'What else are you into? Choose 2–5 personal topics.',
+    min: 2,
+    max: 5,
+    defaultValues: ['travel', 'food'],
+    options: [
+      { value: 'family', label: 'Family & relationships', icon: 'people-outline' },
+      { value: 'travel', label: 'Travel', icon: 'airplane-outline' },
+      { value: 'food', label: 'Food', icon: 'fast-food-outline' },
+      { value: 'fitness', label: 'Fitness', icon: 'barbell-outline' },
+      { value: 'mental_health', label: 'Mental health', icon: 'heart-outline' },
+      { value: 'career', label: 'Career', icon: 'briefcase-outline' },
+      { value: 'money', label: 'Money', icon: 'cash-outline' },
+      { value: 'pets', label: 'Pets', icon: 'paw-outline' },
+      { value: 'music', label: 'Music', icon: 'musical-notes-outline' },
+      { value: 'fashion', label: 'Fashion', icon: 'shirt-outline' },
+    ],
+  },
+  {
+    id: 'visual_style',
+    type: 'single-select',
+    mascotText: 'Which visual style feels most like you?',
+    defaultValue: 'bright_colorful',
+    options: [
+      { value: 'bright_colorful', label: 'Bright & Colorful', icon: 'color-palette-outline' },
+      { value: 'clean_minimal', label: 'Clean & Minimal', icon: 'square-outline' },
+      { value: 'dark_moody', label: 'Dark & Moody', icon: 'moon-outline' },
+      { value: 'warm_natural', label: 'Warm & Natural', icon: 'leaf-outline' },
+      { value: 'bold_contrast', label: 'Bold & High-contrast', icon: 'contrast-outline' },
+      { value: 'vintage_film', label: 'Vintage / Film', icon: 'film-outline' },
+    ],
+  },
+  {
+    id: 'grow_faster',
+    type: 'interstitial',
+    mascotText: 'One thing worth knowing…',
+    defaultValue: 'yes',
+    headline: 'Creators who follow a plan grow ~70% faster.',
+    body: 'We’ll turn your Creator DNA into a plan built around what you love making.',
+    options: [
+      { value: 'yes', label: 'I’m in' },
+      { value: 'later', label: 'Tell me more' },
+    ],
+  },
+  {
+    id: 'camera_frequency',
+    type: 'segmented',
+    mascotText: 'How often are you comfortable on camera?',
+    defaultValue: 'sometimes',
+    options: [
+      { value: 'often', label: 'Often' },
+      { value: 'sometimes', label: 'Sometimes' },
+      { value: 'never', label: 'Never' },
+    ],
+  },
+  {
+    id: 'equipment',
+    type: 'multi-select',
+    mascotText: 'What gear do you have to work with?',
+    min: 1,
+    defaultValues: ['smartphone'],
+    options: [
+      { value: 'smartphone', label: 'Smartphone', icon: 'phone-portrait-outline' },
+      { value: 'dslr', label: 'DSLR / Mirrorless', icon: 'camera-outline' },
+      { value: 'ring_light', label: 'Ring light', icon: 'bulb-outline' },
+      { value: 'tripod', label: 'Tripod', icon: 'videocam-outline' },
+      { value: 'external_mic', label: 'External mic', icon: 'mic-outline' },
+      { value: 'gimbal', label: 'Gimbal', icon: 'move-outline' },
+      { value: 'none_yet', label: 'None yet', icon: 'close-circle-outline' },
+    ],
+  },
+  {
+    id: 'dna_complete',
+    type: 'cta',
+    mascotText: 'Your Creator DNA is all set!',
+    body: 'I’ve got a clear picture of who you are as a creator. Let’s build your plan.',
+    buttonLabel: 'Continue',
+    icon: 'sparkles',
   },
 ];
