@@ -23,8 +23,14 @@ export type CharacterTheme = {
   name: string;
   /** One-line role, e.g. "Viral Growth". */
   tagline: string;
-  /** Brand color — the character's identity hue. */
+  /** Brand color — the character's identity hue. Carries white text (buttons, markers). */
   primary: string;
+  /**
+   * Fill of the header hill. Split from `primary` because a hill may be far
+   * lighter than the accent it pairs with (Virlo's lime header vs its deep-green
+   * buttons), and only the accent has to survive white text on top of it.
+   */
+  hillFill: string;
   /** Header hill gradient stops (top → bottom). */
   hillTop: string;
   hillBottom: string;
@@ -32,15 +38,20 @@ export type CharacterTheme = {
   backgroundTint: string;
   /** Card background on the tinted page (kept white). */
   surface: string;
-  /** Text/icon color placed on the colored hill (near-white). */
+  /** Text/icon color placed on the colored hill. Dark when the hill is light. */
   onHill: string;
   /** Secondary text on the hill. */
   onHillMuted: string;
+  /** Scrim behind the header pill — tuned to stay visible on this hill's lightness. */
+  pillScrim: string;
   /** Marker / highlight accent (may equal `primary` or a deeper shade). */
   accent: string;
-  /** Layered footer hill colors, back-to-front. */
+  /** Layered footer hill colors, back-to-front (lightest ridge first). */
   footerHills: string[];
 };
+
+/** Footer ridge count — every character supplies exactly this many `footerHills`. */
+export const FOOTER_LAYER_COUNT = 4;
 
 export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
   // Home tab — the only fully-designed character this build.
@@ -48,15 +59,22 @@ export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
     id: 'virlo',
     name: 'Virlo',
     tagline: 'Viral Growth',
-    primary: '#2E7D32',
-    hillTop: '#3B9A41',
-    hillBottom: '#2E7D32',
-    backgroundTint: '#F1F7F0',
+    // Accent stays a deep lime so white text/markers still read on it.
+    primary: '#3A8402',
+    // The hill is the light lime from the design frame. Because it is light,
+    // on-hill ink flips to dark — the status bar is already dark in light mode.
+    hillFill: '#CFE58F',
+    hillTop: '#CFE58F',
+    hillBottom: '#BCD96B',
+    backgroundTint: '#F5F9EC',
     surface: Palette.surface,
-    onHill: '#FFFFFF',
-    onHillMuted: 'rgba(255,255,255,0.82)',
-    accent: '#2E7D32',
-    footerHills: ['#3B9A41', '#2E7D32', '#215B26'],
+    onHill: '#26330F',
+    onHillMuted: 'rgba(38,51,15,0.66)',
+    pillScrim: 'rgba(255,255,255,0.55)',
+    accent: '#3A8402',
+    // Ridge 0 is the header's own lime, so the top and bottom of the screen
+    // resolve to the same tone and read as one frame.
+    footerHills: ['#CFE58F', '#A6CE58', '#79B024', '#54900E'],
   },
   // The next three are placeholders so the type is exhaustive and their
   // screens can adopt them later by swapping one import. Tune hues at design time.
@@ -65,42 +83,48 @@ export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
     name: 'Statto',
     tagline: 'Smart Insights',
     primary: '#1E63C4',
+    hillFill: '#1E63C4',
     hillTop: '#3B82E0',
     hillBottom: '#1E63C4',
     backgroundTint: '#EFF4FB',
     surface: Palette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.82)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#1E63C4',
-    footerHills: ['#3B82E0', '#1E63C4', '#164B96'],
+    footerHills: ['#6BA3EC', '#3B82E0', '#1E63C4', '#164B96'],
   },
   enga: {
     id: 'enga',
     name: 'Enga',
     tagline: 'Engagement',
     primary: '#7A3FB0',
+    hillFill: '#7A3FB0',
     hillTop: '#9A5AD0',
     hillBottom: '#7A3FB0',
     backgroundTint: '#F5F0FA',
     surface: Palette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.82)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#7A3FB0',
-    footerHills: ['#9A5AD0', '#7A3FB0', '#5C2E86'],
+    footerHills: ['#B584DF', '#9A5AD0', '#7A3FB0', '#5C2E86'],
   },
   spark: {
     id: 'spark',
     name: 'Spark',
     tagline: 'Momentum',
     primary: '#E5A81E',
+    hillFill: '#E5A81E',
     hillTop: '#F2BE3E',
     hillBottom: '#E5A81E',
     backgroundTint: '#FCF6E7',
     surface: Palette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.86)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#E5A81E',
-    footerHills: ['#F2BE3E', '#E5A81E', '#B48212'],
+    footerHills: ['#F7D275', '#F2BE3E', '#E5A81E', '#B48212'],
   },
 };
 
@@ -116,57 +140,66 @@ export const CHARACTERS_DARK: Record<CharacterId, CharacterTheme> = {
     id: 'virlo',
     name: 'Virlo',
     tagline: 'Viral Growth',
-    primary: '#3E9A45',
-    hillTop: '#2C6E31',
-    hillBottom: '#1F4F23',
-    backgroundTint: '#0E1A0F',
+    // Dark mode keeps a deep hill, so on-hill ink stays white here.
+    primary: '#4F8F15',
+    hillFill: '#3E6B18',
+    hillTop: '#3E6B18',
+    hillBottom: '#2C4D11',
+    backgroundTint: '#0F1408',
     surface: darkPalette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.82)',
-    accent: '#3E9A45',
-    footerHills: ['#2C6E31', '#1F4F23', '#122F15'],
+    pillScrim: 'rgba(255,255,255,0.18)',
+    accent: '#4F8F15',
+    footerHills: ['#3E6B18', '#325713', '#26430E', '#1A2E09'],
   },
   statto: {
     id: 'statto',
     name: 'Statto',
     tagline: 'Smart Insights',
     primary: '#3573C8',
+    hillFill: '#3573C8',
     hillTop: '#274F86',
     hillBottom: '#1B3A63',
     backgroundTint: '#0C1420',
     surface: darkPalette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.82)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#3573C8',
-    footerHills: ['#274F86', '#1B3A63', '#0F2039'],
+    footerHills: ['#3B6FA8', '#274F86', '#1B3A63', '#0F2039'],
   },
   enga: {
     id: 'enga',
     name: 'Enga',
     tagline: 'Engagement',
     primary: '#7A4DAB',
+    hillFill: '#7A4DAB',
     hillTop: '#5E3A85',
     hillBottom: '#472C64',
     backgroundTint: '#150E1D',
     surface: darkPalette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.82)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#7A4DAB',
-    footerHills: ['#5E3A85', '#472C64', '#2C1B40'],
+    footerHills: ['#7A55A8', '#5E3A85', '#472C64', '#2C1B40'],
   },
   spark: {
     id: 'spark',
     name: 'Spark',
     tagline: 'Momentum',
     primary: '#D9A02A',
+    hillFill: '#D9A02A',
     hillTop: '#A6791C',
     hillBottom: '#7D5B14',
     backgroundTint: '#1A1405',
     surface: darkPalette.surface,
     onHill: '#FFFFFF',
     onHillMuted: 'rgba(255,255,255,0.86)',
+    pillScrim: 'rgba(255,255,255,0.18)',
     accent: '#D9A02A',
-    footerHills: ['#A6791C', '#7D5B14', '#4F3A0D'],
+    footerHills: ['#C9993A', '#A6791C', '#7D5B14', '#4F3A0D'],
   },
 };
 

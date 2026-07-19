@@ -25,7 +25,13 @@ export function InstagramPill({ theme, account, onPress }: InstagramPillProps) {
   return (
     <HapticPressable
       hitSlop={8}
-      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.pill,
+        // A faint white scrim vanishes on a light hill, so each character supplies
+        // a scrim tuned to its own hill lightness.
+        { backgroundColor: theme.pillScrim },
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}>
       {account ? (
         <>
@@ -61,7 +67,6 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.xs + 2,
     paddingRight: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.18)',
     maxWidth: 220,
   },
   pressed: {

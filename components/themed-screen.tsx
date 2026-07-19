@@ -16,7 +16,7 @@ import { Fonts, Radius, Spacing, TAB_BAR_CLEARANCE, Type } from '@/constants/the
 import { INPUT, ON_HILL, RAMPS, themeIndex, transitionToCharacter } from '@/constants/theme-transition';
 import { useTheme } from '@/contexts/theme';
 
-const FOOTER_HEIGHT = 150;
+const FOOTER_HEIGHT = 132;
 
 type ThemedScreenProps = {
   /** Which character owns this tab — drives the focus color transition. */
@@ -68,20 +68,24 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
   );
 }
 
-/** White title shown on the hill header (left side). */
-export function HeaderTitle({ title }: { title: string }) {
-  return <Text style={styles.headerTitle}>{title}</Text>;
+/** Title shown on the hill header (left side). See `SettingsGear` re: `color`. */
+export function HeaderTitle({ title, color = ON_HILL }: { title: string; color?: string }) {
+  return <Text style={[styles.headerTitle, { color }]}>{title}</Text>;
 }
 
-/** Settings gear for the hill header (right side). White on the hill. */
-export function SettingsGear() {
+/**
+ * Settings gear for the hill header (right side). Defaults to white, which suits
+ * the three dark hills; a screen whose hill is light (Virlo's lime) passes its
+ * character's `onHill` so the icon stays legible.
+ */
+export function SettingsGear({ color = ON_HILL }: { color?: string }) {
   const router = useRouter();
   return (
     <HapticPressable
       hitSlop={12}
       style={({ pressed }) => pressed && styles.pressed}
       onPress={() => router.push('/settings')}>
-      <Ionicons name="settings-outline" size={22} color={ON_HILL} />
+      <Ionicons name="settings-outline" size={22} color={color} />
     </HapticPressable>
   );
 }

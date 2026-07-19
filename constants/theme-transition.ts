@@ -14,7 +14,13 @@
  */
 import { Easing, makeMutable, withTiming } from 'react-native-reanimated';
 
-import { CHARACTERS, CHARACTERS_DARK, CharacterId, CharacterTheme } from './characters';
+import {
+  CHARACTERS,
+  CHARACTERS_DARK,
+  CharacterId,
+  CharacterTheme,
+  FOOTER_LAYER_COUNT,
+} from './characters';
 
 // Tab order === character order.
 export const CHAR_ORDER: CharacterId[] = ['virlo', 'statto', 'enga', 'spark'];
@@ -23,23 +29,29 @@ export const CHAR_ORDER: CharacterId[] = ['virlo', 'statto', 'enga', 'spark'];
 export const INPUT = CHAR_ORDER.map((_, i) => i);
 
 // A frozen set of color ramps (plain string[] — safely captured inside
-// worklets), one per scheme. Note each character has primary === accent ===
-// hillBottom === footerHills[1], and footerHills === [hillTop, hillBottom, dark].
+// worklets), one per scheme. `HILL` is deliberately separate from `PRIMARY`:
+// a character's header can be far lighter than its accent (Virlo's lime hill
+// vs its deep-green buttons), so the two roles no longer share one value.
 export type Ramps = {
   PRIMARY: string[];
+  /** Header hill fill, per character. */
+  HILL: string[];
   HILL_TOP: string[];
   BG_TINT: string[];
-  FOOTER_DARK: string[];
-  /** Footer layers back-to-front: [hillTop, primary, dark]. */
+  /** One ramp per footer ridge, back-to-front — derived from `footerHills`. */
   FOOTER_RAMPS: string[][];
 };
 
 function buildRamps(reg: Record<CharacterId, CharacterTheme>): Ramps {
   const PRIMARY = CHAR_ORDER.map((id) => reg[id].primary);
+  const HILL = CHAR_ORDER.map((id) => reg[id].hillFill);
   const HILL_TOP = CHAR_ORDER.map((id) => reg[id].hillTop);
   const BG_TINT = CHAR_ORDER.map((id) => reg[id].backgroundTint);
-  const FOOTER_DARK = CHAR_ORDER.map((id) => reg[id].footerHills[2]);
-  return { PRIMARY, HILL_TOP, BG_TINT, FOOTER_DARK, FOOTER_RAMPS: [HILL_TOP, PRIMARY, FOOTER_DARK] };
+  // One ramp per ridge index, so the ridge count is driven by the palette alone.
+  const FOOTER_RAMPS = Array.from({ length: FOOTER_LAYER_COUNT }, (_, layer) =>
+    CHAR_ORDER.map((id) => reg[id].footerHills[layer]),
+  );
+  return { PRIMARY, HILL, HILL_TOP, BG_TINT, FOOTER_RAMPS };
 }
 
 // Both ramp sets are derived once at module load and kept as frozen arrays. The
@@ -52,7 +64,10 @@ export const RAMPS: Record<'light' | 'dark', Ramps> = {
   dark: buildRamps(CHARACTERS_DARK),
 };
 
-// On-hill text/icon color is white for every character, in both schemes.
+// Ink placed on a character's *accent* fill (calendar "today" dot, accent pill).
+// Every `primary` stays dark enough to carry white, so this is a constant.
+// Ink on the *header hill* is NOT constant — Virlo's hill is light lime and needs
+// dark ink — so that comes from the character's own `onHill`, not from here.
 export const ON_HILL = '#FFFFFF';
 
 // The animated driver. Starts on Home (index 0).

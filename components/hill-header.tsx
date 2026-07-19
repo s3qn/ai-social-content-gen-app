@@ -2,14 +2,18 @@ import { ReactNode } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { interpolateColor, useAnimatedProps } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Defs, G, LinearGradient, Mask, Path, Rect, Stop } from 'react-native-svg';
 
 import { INPUT, RAMPS, themeIndex } from '@/constants/theme-transition';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
 
 // How far the curved center "tongue" bulges below the solid block.
-export const CURVE_DEPTH = 36;
+export const CURVE_DEPTH = 28;
+
+// Fraction of the hill that stays fully opaque before it begins dissolving into
+// the page. Everything below melts out, so there is no hard color seam.
+const FADE_START = 0.55;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -23,16 +27,21 @@ type HillHeaderProps = {
 };
 
 /**
- * The character-colored header: a solid block (corners included) with a curved
- * center dip that overhangs into the scroll content. The fill color self-drives
- * from the shared `themeIndex`, so it cross-fades when tabs change. A static
- * white sheen overlay preserves the top-lit gradient depth (animating gradient
- * <Stop> colors is unreliable on Fabric, so only the solid fill animates).
+ * The character-colored header: a block (corners included) with a curved center
+ * dip, whose lower half dissolves into the page rather than ending on a hard
+ * edge. The fill self-drives from the shared `themeIndex`, so it cross-fades
+ * when tabs change.
+ *
+ * The dissolve is an alpha `Mask`, not a fade to the page color: the page wash
+ * is itself animated per character, so fading to any fixed color would leave a
+ * seam on three of the four tabs. Masking to transparent lets whatever wash is
+ * underneath show through exactly. Both gradients use static stops — animating
+ * gradient <Stop> colors is unreliable on Fabric, so only the path fill animates.
  */
-export function HillHeader({ height = 132, style, children }: HillHeaderProps) {
+export function HillHeader({ height = 72, style, children }: HillHeaderProps) {
   'use no memo';
   const { scheme } = useTheme();
-  const { PRIMARY } = RAMPS[scheme];
+  const { HILL } = RAMPS[scheme];
   const insets = useSafeAreaInsets();
   const solidH = insets.top + height;
   const total = solidH + CURVE_DEPTH;
@@ -41,7 +50,7 @@ export function HillHeader({ height = 132, style, children }: HillHeaderProps) {
   // `scheme` is an explicit dependency so switching light↔dark re-derives the
   // worklet with the new ramp (snaps; tab changes still cross-fade via themeIndex).
   const animatedProps = useAnimatedProps(
-    () => ({ fill: interpolateColor(themeIndex.value, INPUT, PRIMARY) }),
+    () => ({ fill: interpolateColor(themeIndex.value, INPUT, HILL) }),
     [scheme],
   );
 
@@ -58,11 +67,22 @@ export function HillHeader({ height = 132, style, children }: HillHeaderProps) {
             <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.16} />
             <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity={0} />
           </LinearGradient>
+          {/* White = keep, black = drop. Opaque down to FADE_START, gone by the base. */}
+          <LinearGradient id="hillFadeGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" />
+            <Stop offset={FADE_START} stopColor="#FFFFFF" />
+            <Stop offset="1" stopColor="#000000" />
+          </LinearGradient>
+          <Mask id="hillFade">
+            <Rect x="0" y="0" width="100" height={total} fill="url(#hillFadeGrad)" />
+          </Mask>
         </Defs>
-        {/* Animated solid hue (self-driving). */}
-        <AnimatedPath animatedProps={animatedProps} d={d} />
-        {/* Static top-lit sheen for depth. */}
-        <Path d={d} fill="url(#hillSheen)" />
+        <G mask="url(#hillFade)">
+          {/* Animated solid hue (self-driving). */}
+          <AnimatedPath animatedProps={animatedProps} d={d} />
+          {/* Static top-lit sheen for depth. */}
+          <Path d={d} fill="url(#hillSheen)" />
+        </G>
       </Svg>
       <View style={[styles.content, { paddingTop: insets.top + Spacing.sm, height }]}>
         {children}
