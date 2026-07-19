@@ -21,7 +21,11 @@ import { CtaCard } from '@/components/onboarding/cta-card';
 import { Interstitial } from '@/components/onboarding/interstitial';
 import { MascotBubble } from '@/components/onboarding/mascot-bubble';
 import { GrowthChart } from '@/components/onboarding/growth-chart';
+import { IdeasTeaser } from '@/components/onboarding/ideas-teaser';
 import { MultiSelect } from '@/components/onboarding/multi-select';
+import { NotificationsOptIn } from '@/components/onboarding/notifications-optin';
+import { Paywall } from '@/components/onboarding/paywall';
+import { Rating } from '@/components/onboarding/rating';
 import { Personalising } from '@/components/onboarding/personalising';
 import { ProfileSummary } from '@/components/onboarding/profile-summary';
 import { ScanChecklist } from '@/components/onboarding/scan-checklist';
@@ -38,8 +42,11 @@ import { useTheme } from '@/contexts/theme';
  * straight to the onboarding context (so answers persist as you go). The last
  * step's "Continue" marks onboarding complete and exits.
  *
- * F1: reached via the temporary "Run onboarding" row in Settings — the real
- * router gate is wired in F6.
+ * F6: the funnel now ends on the `paywall` step, which owns its OWN CTA — the
+ * driver hides its footer button there and the paywall calls `finish()` from
+ * both "Activate My Plan Now" and the ✕ (soft paywall: never trap the user).
+ * The router gate in app/_layout.tsx is live, so completing the funnel flips
+ * `hasOnboarded` and swaps the protected group over to the tabs.
  */
 export default function OnboardingDriver() {
   const insets = useSafeAreaInsets();
@@ -77,7 +84,10 @@ export default function OnboardingDriver() {
 
   const goBack = () => {
     if (index > 0) setIndex((i) => i - 1);
-    else router.back(); // leave the group (back to Settings in F1)
+    // F6 — with the gate live the funnel is the root for a not-yet-onboarded
+    // user, so there's usually nothing behind it. Only pop when there actually
+    // is history (e.g. entered via the Settings "Replay onboarding" row).
+    else if (router.canGoBack()) router.back();
   };
 
   // Jump straight back to the scan step — used by the reveal fallbacks when the
@@ -87,15 +97,24 @@ export default function OnboardingDriver() {
     setIndex(scanIndex >= 0 ? scanIndex : 0);
   };
 
+  // Finish the funnel: persist the flag then hand over to the tabs. `complete()`
+  // flips `hasOnboarded`, which swaps the protected group in app/_layout.tsx;
+  // the explicit replace makes the destination deterministic instead of relying
+  // on the guard's fallback redirect.
+  const finish = () => {
+    complete();
+    router.replace('/home');
+  };
+
   const goNext = () => {
     if (!answered) return;
-    if (isLast) {
-      complete();
-      router.back(); // F1 has nothing after Connect — exit the flow
-    } else {
-      setIndex((i) => i + 1);
-    }
+    if (isLast) finish();
+    else setIndex((i) => i + 1);
   };
+
+  // The paywall renders its own CTA + ✕, so the driver's footer button would be
+  // a duplicate — hide it and let the paywall drive the finish.
+  const showFooter = step.type !== 'paywall';
 
   return (
     <KeyboardAvoidingView
@@ -127,18 +146,29 @@ export default function OnboardingDriver() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[
+          styles.body,
+          // No footer on the paywall step — reserve the safe-area inset here so
+          // its own CTA / links clear the home indicator.
+          !showFooter && { paddingBottom: insets.bottom + Spacing.xxl },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <MascotBubble text={step.mascotText} />
         <View style={styles.stepArea}>
-          {renderStep(step, answers, setAnswer, styles, palette, goToScan)}
+          {renderStep(step, answers, setAnswer, styles, palette, goToScan, finish)}
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
-        <GradientButton label={continueLabel(step, isLast)} onPress={goNext} disabled={!answered} />
-      </View>
+      {showFooter ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
+          <GradientButton
+            label={continueLabel(step, isLast)}
+            onPress={goNext}
+            disabled={!answered}
+          />
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -156,6 +186,9 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
     case 'single-select':
     case 'segmented':
     case 'interstitial':
+    case 'notifications':
+      // F6 — the notifications opt-in still needs a pick ("Allow" or "Maybe
+      // later"); it's seeded with a defaultValue so Continue starts enabled.
       return typeof answer === 'string' && answer.length > 0;
     case 'scan':
       // The ScanChecklist writes a truthy marker here once the fetch resolves.
@@ -167,7 +200,12 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
     case 'profile-summary':
     case 'content-dna':
     case 'growth':
+    case 'rating':
+    case 'ideas-teaser':
       // Reveal / CTA steps collect no answer — the button just advances the flow.
+      return true;
+    case 'paywall':
+      // The paywall hides the driver footer and finishes via its own CTA / ✕.
       return true;
   }
 }
@@ -186,6 +224,7 @@ function renderStep(
   styles: ReturnType<typeof makeStyles>,
   palette: AppPalette,
   goToScan: () => void,
+  finish: () => void,
 ) {
   switch (step.type) {
     case 'single-select':
@@ -246,6 +285,51 @@ function renderStep(
         <GrowthChart
           goal={answers[step.goalKey ?? 'goal'] as string | undefined}
           onRescan={goToScan}
+        />
+      );
+    case 'rating':
+      return (
+        <Rating
+          headline={step.headline}
+          body={step.body}
+          testimonials={step.testimonials}
+        />
+      );
+    case 'notifications':
+      // UI-only — real expo-notifications permission wiring lands with push.
+      return (
+        <NotificationsOptIn
+          headline={step.headline}
+          body={step.body}
+          perks={step.perks}
+          options={step.options}
+          value={answers[step.id] as string | undefined}
+          onChange={(v) => setAnswer(step.id, v)}
+        />
+      );
+    case 'ideas-teaser':
+      return (
+        <IdeasTeaser
+          headline={step.headline}
+          body={step.body}
+          caption={step.caption}
+          ideas={step.ideas}
+        />
+      );
+    case 'paywall':
+      // STUB: no real IAP. Both the CTA and the ✕ record the chosen plan (if
+      // any) and finish onboarding — nothing is ever charged.
+      return (
+        <Paywall
+          headline={step.headline}
+          body={step.body}
+          perks={step.perks}
+          plans={step.plans}
+          ctaLabel={step.ctaLabel}
+          onFinish={(planId) => {
+            setAnswer(step.id, planId ?? 'dismissed');
+            finish();
+          }}
         />
       );
     case 'cta':

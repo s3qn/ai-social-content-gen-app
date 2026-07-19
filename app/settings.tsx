@@ -27,11 +27,14 @@ export default function SettingsScreen() {
   const { reset: resetOnboarding } = useOnboarding();
   const styles = useMemo(() => makeStyles(palette), [palette]);
 
-  // TEMPORARY dev entry (removed in F6): reset onboarding + jump into the flow so
-  // it's reachable before the real router gate is wired.
-  const runOnboarding = () => {
+  // Dev/utility entry. The router gate (app/_layout.tsx) is live as of F6, so
+  // clearing the flag is enough: the guard flips back to the onboarding group.
+  // The explicit replace makes the hand-off deterministic rather than relying on
+  // the guard's fallback redirect. Kept deliberately — without it there's no way
+  // to re-test the funnel once the gate is enforced.
+  const replayOnboarding = () => {
     resetOnboarding();
-    router.push('/step');
+    router.replace('/step');
   };
 
   return (
@@ -61,17 +64,18 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* TEMPORARY — removed in F6 once the real onboarding gate ships. */}
+      {/* Dev/utility row — the only way back into the funnel now that the gate
+          is enforced. */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Developer</Text>
         <HapticPressable
           accessibilityRole="button"
-          onPress={runOnboarding}
+          onPress={replayOnboarding}
           style={({ pressed }) => [styles.devRow, pressed && styles.devRowPressed]}>
           <Ionicons name="flask-outline" size={20} color={palette.accent} />
           <View style={styles.devRowText}>
-            <Text style={styles.devRowTitle}>Run onboarding</Text>
-            <Text style={styles.devRowSub}>Temporary — replays the flow (removed in F6)</Text>
+            <Text style={styles.devRowTitle}>Replay onboarding</Text>
+            <Text style={styles.devRowSub}>Clears your answers and runs the funnel again</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={palette.muted} />
         </HapticPressable>

@@ -151,6 +151,68 @@ export type GrowthStep = StepBase & {
   goalKey?: string;
 };
 
+/**
+ * F6 — "Loved by creators" social proof. STATIC testimonials only; this step
+ * deliberately does NOT call any store-review API (expo-store-review is not
+ * installed). No answer is collected; Continue just advances.
+ */
+export type RatingStep = StepBase & {
+  type: 'rating';
+  headline: string;
+  body?: string;
+  testimonials: { name: string; handle?: string; quote: string }[];
+};
+
+/**
+ * F6 — notifications opt-in. UI ONLY: choosing an option records the user's
+ * intent as this step's answer and nothing else. No `expo-notifications` call,
+ * no OS permission sheet — that lands with push in a later phase.
+ */
+export type NotificationsStep = StepBase & {
+  type: 'notifications';
+  headline: string;
+  body?: string;
+  /** Short bullet list of what the reminders would do. */
+  perks?: string[];
+  options: SelectOption[];
+  defaultValue?: string;
+};
+
+/**
+ * F6 — locked content-ideas teaser. Placeholder idea cards rendered behind a
+ * blur with a lock badge (see components/onboarding/ideas-teaser.tsx). No answer
+ * is collected; Continue advances into the paywall.
+ */
+export type IdeasTeaserStep = StepBase & {
+  type: 'ideas-teaser';
+  headline: string;
+  body?: string;
+  /** Line under the lock badge, e.g. "Unlock with Pro". */
+  caption: string;
+  ideas: { title: string; meta: string; icon?: IoniconName }[];
+};
+
+/**
+ * F6 — the paywall. The LAST step in the funnel: it owns its own CTA (the driver
+ * hides its footer button here) and BOTH "Activate My Plan Now" and the ✕ call
+ * `complete()` and exit to the tabs. STUBBED — no IAP SDK, nothing is charged.
+ */
+export type PaywallStep = StepBase & {
+  type: 'paywall';
+  headline: string;
+  body?: string;
+  perks: { label: string; icon?: IoniconName }[];
+  plans: {
+    id: string;
+    title: string;
+    price: string;
+    period: string;
+    note?: string;
+    best?: boolean;
+  }[];
+  ctaLabel: string;
+};
+
 export type OnboardingStep =
   | SingleSelectStep
   | MultiSelectStep
@@ -162,7 +224,11 @@ export type OnboardingStep =
   | ProfileSummaryStep
   | ContentDnaStep
   | PersonalisingStep
-  | GrowthStep;
+  | GrowthStep
+  | RatingStep
+  | NotificationsStep
+  | IdeasTeaserStep
+  | PaywallStep;
 
 /**
  * F1 — Connect. Two steps: pick the platform, then enter the handle. Kept short
@@ -430,5 +496,94 @@ export const onboardingSteps: OnboardingStep[] = [
     type: 'growth',
     mascotText: 'Here’s where this plan can take you.',
     goalKey: 'goal',
+  },
+
+  // F6 — close. Social proof, a (UI-only) notifications opt-in, a locked ideas
+  // teaser, then the paywall. `paywall` MUST stay last: the driver treats the
+  // final step as the one that calls complete(), and the paywall owns its own
+  // CTA + ✕ (both finish the funnel).
+  {
+    id: 'rating',
+    type: 'rating',
+    mascotText: 'You’re in good company.',
+    headline: 'Loved by creators',
+    body: 'Thousands of creators use their plan to post with intent instead of guessing.',
+    testimonials: [
+      {
+        name: 'Maya',
+        handle: '@mayamakes',
+        quote: 'I went from posting whenever to posting with a plan. 4× the reach in six weeks.',
+      },
+      {
+        name: 'Daniel',
+        handle: '@dan.builds',
+        quote: 'The content ideas alone save me an hour a day. It just knows my niche.',
+      },
+      {
+        name: 'Noa',
+        handle: '@noa.creates',
+        quote: 'First time my engagement went UP while I posted less. Wild.',
+      },
+    ],
+  },
+  {
+    id: 'notifications',
+    type: 'notifications',
+    mascotText: 'Want me to keep you on track?',
+    headline: 'Turn on growth reminders',
+    body: 'A quick nudge when it’s the right time to post — nothing noisy.',
+    defaultValue: 'allow',
+    perks: [
+      'Your best posting times',
+      'Weekly progress against your goal',
+      'Fresh content ideas for your niche',
+    ],
+    options: [
+      { value: 'allow', label: 'Allow notifications', icon: 'notifications-outline' },
+      { value: 'later', label: 'Maybe later', icon: 'time-outline' },
+    ],
+  },
+  {
+    id: 'ideas_teaser',
+    type: 'ideas-teaser',
+    mascotText: 'I’ve already drafted your first content ideas.',
+    headline: 'Your first week of ideas is ready',
+    body: 'Built from your Creator DNA, your goals and what already works on your profile.',
+    caption: 'Unlock with Pro',
+    ideas: [
+      { title: '3 hooks that stop the scroll in your niche', meta: 'Reel · 22s', icon: 'flame-outline' },
+      { title: 'Behind the scenes: how you actually make it', meta: 'Carousel · 5 slides', icon: 'aperture-outline' },
+      { title: 'The mistake everyone in your niche makes', meta: 'Reel · 30s', icon: 'bulb-outline' },
+    ],
+  },
+  {
+    id: 'paywall',
+    type: 'paywall',
+    mascotText: 'Last thing — let’s switch your plan on.',
+    headline: 'Unlock your growth plan',
+    body: 'Everything we just built, plus fresh ideas every week.',
+    ctaLabel: 'Activate My Plan Now',
+    perks: [
+      { label: 'Your personalised growth strategy', icon: 'trending-up-outline' },
+      { label: 'Weekly content ideas for your niche', icon: 'bulb-outline' },
+      { label: 'Best times to post, tuned to you', icon: 'time-outline' },
+      { label: 'Progress tracking against your goal', icon: 'stats-chart-outline' },
+    ],
+    plans: [
+      {
+        id: 'monthly',
+        title: 'Monthly',
+        price: '₪69.9',
+        period: 'per month',
+      },
+      {
+        id: 'yearly',
+        title: 'Yearly',
+        price: '₪29.16',
+        period: 'per month',
+        note: 'Billed yearly · save 58%',
+        best: true,
+      },
+    ],
   },
 ];
