@@ -29,7 +29,7 @@ const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 export function InstagramPill({ theme, account, onPress }: InstagramPillProps) {
   'use no memo';
   // displayName is optional (the scan may not return one), so fall back to the
-  // handle — every connected account always has one.
+  // handle. Every connected account always has one.
   const initials = account ? (account.displayName ?? account.handle).slice(0, 1).toUpperCase() : '';
   const { scheme } = useTheme();
   const { PILL_SCRIMS } = RAMPS[scheme];

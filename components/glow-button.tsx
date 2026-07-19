@@ -18,7 +18,7 @@ import { triggerImpact } from '@/components/haptic-pressable';
 const CORNER_RADIUS = 70;
 const OUTLINE_WIDTH = 4;
 
-// Neon-green border, with the first color repeated so the rotation loops seamlessly.
+// Neon-green border, with the first color repeated so the rotation loops without a seam.
 const BORDER_COLORS = ['#39ff14', '#00ffa3', '#ccff00', '#39ff14'] as const;
 const INNER_BG = 'rgba(21, 21, 21, 1)';
 

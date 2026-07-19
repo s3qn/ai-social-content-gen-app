@@ -29,7 +29,7 @@ type StepBase = {
   /** Question shown in the mascot speech bubble. */
   mascotText: string;
   /**
-   * F5 — mark a question as skippable: Continue is enabled even with no answer
+   * F5. Mark a question as skippable: Continue is enabled even with no answer
    * (honored in the driver's `isAnswered`). Used for the optional secondary goal.
    */
   optional?: boolean;
@@ -39,7 +39,7 @@ type StepBase = {
 export type SingleSelectStep = StepBase & {
   type: 'single-select';
   options: SelectOption[];
-  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  /** F4. Option `value` seeded on first view so the user only has to adjust. */
   defaultValue?: string;
 };
 
@@ -49,15 +49,15 @@ export type MultiSelectStep = StepBase & {
   options: SelectOption[];
   min?: number;
   max?: number;
-  /** F4 — option `value`s seeded on first view so the user only has to adjust. */
+  /** F4. Option `value`s seeded on first view so the user only has to adjust. */
   defaultValues?: string[];
 };
 
-/** Segmented control — Often/Sometimes/Never, Yes/No (F4+). */
+/** Segmented control: Often/Sometimes/Never, Yes/No (F4+). */
 export type SegmentedStep = StepBase & {
   type: 'segmented';
   options: SelectOption[];
-  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  /** F4. Option `value` seeded on first view so the user only has to adjust. */
   defaultValue?: string;
 };
 
@@ -70,7 +70,7 @@ export type TextStep = StepBase & {
 };
 
 /**
- * F2 — Scan. Animated checklist tied to the REAL Instagram fetch. On mount the
+ * F2. Scan. Animated checklist tied to the REAL Instagram fetch. On mount the
  * renderer reads the earlier @username answer, calls the scan service, ticks
  * the rows, stores the result in context, and enables Continue.
  */
@@ -83,7 +83,7 @@ export type ScanStep = StepBase & {
 };
 
 /**
- * F2 — Interstitial social-proof card: mascot + headline + a light Yes/No
+ * F2. Interstitial social-proof card: mascot + headline + a light Yes/No
  * question (segmented). Used to break up the flow around the scan.
  */
 export type InterstitialStep = StepBase & {
@@ -91,12 +91,12 @@ export type InterstitialStep = StepBase & {
   headline: string;
   body?: string;
   options: SelectOption[];
-  /** F4 — option `value` seeded on first view so the user only has to adjust. */
+  /** F4. Option `value` seeded on first view so the user only has to adjust. */
   defaultValue?: string;
 };
 
 /**
- * F2 — Call-to-action step: mascot + optional body + a single primary button
+ * F2. Call-to-action step: mascot + optional body + a single primary button
  * (the footer button uses `buttonLabel`). No answer required; advances the flow.
  * The "Unlock Profile Summary" reveal it leads to is built in F3.
  */
@@ -108,12 +108,12 @@ export type CtaStep = StepBase & {
 };
 
 /**
- * F3 — Reveal steps. Both consume the stored scan result from the onboarding
+ * F3. Reveal steps. Both consume the stored scan result from the onboarding
  * context (they take no extra config beyond the shared mascot header). No answer
  * is collected; a Continue/Finish advances the flow.
  *
- * `profile-summary` — real StatTrio + heuristic ScoreMeter + verdict.
- * `content-dna` — real post-type DnaBar + engagement insight + stubbed vibe/themes.
+ * `profile-summary`: real StatTrio + heuristic ScoreMeter + verdict.
+ * `content-dna`: real post-type DnaBar + engagement insight + stubbed vibe/themes.
  */
 export type ProfileSummaryStep = StepBase & {
   type: 'profile-summary';
@@ -124,7 +124,7 @@ export type ContentDnaStep = StepBase & {
 };
 
 /**
- * F5 — "Personalising Your Growth Strategy" timed checklist. Purely COSMETIC:
+ * F5. "Personalising Your Growth Strategy" timed checklist. Purely COSMETIC:
  * a self-contained timer ticks the rows over a few seconds, then enables
  * Continue. It does NOT call any real fetch (unlike the F2 `scan` step). Its
  * own component (`components/onboarding/personalising.tsx`) writes a 'done'
@@ -139,7 +139,7 @@ export type PersonalisingStep = StepBase & {
 };
 
 /**
- * F5 — Projected Growth reveal. Reads the stored scan followers + the chosen
+ * F5. Projected Growth reveal. Reads the stored scan followers + the chosen
  * `goal` answer and renders an illustrative Today→target projection chart.
  * No answer is collected; a Continue advances the flow. Its component
  * (`components/onboarding/growth-chart.tsx`) falls back gracefully if the scan
@@ -152,7 +152,7 @@ export type GrowthStep = StepBase & {
 };
 
 /**
- * F6 — "Loved by creators" social proof. STATIC testimonials only; this step
+ * F6. "Loved by creators" social proof. STATIC testimonials only; this step
  * deliberately does NOT call any store-review API (expo-store-review is not
  * installed). No answer is collected; Continue just advances.
  */
@@ -164,9 +164,9 @@ export type RatingStep = StepBase & {
 };
 
 /**
- * F6 — notifications opt-in. UI ONLY: choosing an option records the user's
+ * F6. Notifications opt-in. UI ONLY: choosing an option records the user's
  * intent as this step's answer and nothing else. No `expo-notifications` call,
- * no OS permission sheet — that lands with push in a later phase.
+ * no OS permission sheet. That lands with push in a later phase.
  */
 export type NotificationsStep = StepBase & {
   type: 'notifications';
@@ -179,7 +179,7 @@ export type NotificationsStep = StepBase & {
 };
 
 /**
- * F6 — locked content-ideas teaser. Placeholder idea cards rendered behind a
+ * F6. Locked content-ideas teaser. Placeholder idea cards rendered behind a
  * blur with a lock badge (see components/onboarding/ideas-teaser.tsx). No answer
  * is collected; Continue advances into the paywall.
  */
@@ -193,9 +193,9 @@ export type IdeasTeaserStep = StepBase & {
 };
 
 /**
- * F6 — the paywall. The LAST step in the funnel: it owns its own CTA (the driver
+ * F6. The paywall. The LAST step in the funnel: it owns its own CTA (the driver
  * hides its footer button here) and BOTH "Activate My Plan Now" and the ✕ call
- * `complete()` and exit to the tabs. STUBBED — no IAP SDK, nothing is charged.
+ * `complete()` and exit to the tabs. STUBBED: no IAP SDK, nothing is charged.
  */
 export type PaywallStep = StepBase & {
   type: 'paywall';
@@ -231,7 +231,7 @@ export type OnboardingStep =
   | PaywallStep;
 
 /**
- * F1 — Connect. Two steps: pick the platform, then enter the handle. Kept short
+ * F1. Connect. Two steps: pick the platform, then enter the handle. Kept short
  * and easy to extend: append more step objects (any archetype above) to grow the
  * funnel in later features.
  */
@@ -250,18 +250,18 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'username',
     type: 'text',
-    mascotText: "Nice! What's your @username there?",
+    mascotText: "What's your @username there?",
     placeholder: 'yourhandle',
     prefix: '@',
   },
 
-  // F2 — Scan. An interstitial to set up the scan, the real fetch checklist, a
+  // F2. Scan. An interstitial to set up the scan, the real fetch checklist, a
   // second interstitial for social proof, then the "Unlock" CTA (F3 builds the
   // Profile Summary reveal that the unlock leads into).
   {
     id: 'checks_analytics',
     type: 'interstitial',
-    mascotText: 'Quick one before we look at your profile…',
+    mascotText: 'Before we look at your profile, one question.',
     headline: 'Do you check your analytics every week?',
     body: 'Most creators who grow fast keep a close eye on what’s working.',
     options: [
@@ -272,7 +272,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'scan',
     type: 'scan',
-    mascotText: 'Give me a moment — I’m pulling your real numbers.',
+    mascotText: 'Give me a moment. I’m pulling your real numbers.',
     usernameKey: 'username',
     rows: [
       'Scanning your profile',
@@ -283,7 +283,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'wants_more_reach',
     type: 'interstitial',
-    mascotText: 'Got it — this is looking interesting.',
+    mascotText: 'This is looking interesting.',
     headline: 'Want to reach more of the right people?',
     body: 'Creators using a clear content strategy grow up to 3× faster.',
     options: [
@@ -294,13 +294,13 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'unlock_summary',
     type: 'cta',
-    mascotText: 'All done — your profile summary is ready.',
+    mascotText: 'Your profile summary is ready.',
     body: 'See your real stats, engagement and a personalised score.',
     buttonLabel: 'Unlock Profile Summary',
     icon: 'sparkles',
   },
 
-  // F3 — Reveal. The unlock CTA leads into the Profile Summary, then Content DNA.
+  // F3. Reveal. The unlock CTA leads into the Profile Summary, then Content DNA.
   // Content DNA is the last step for now; the quiz (F4) will continue from here.
   {
     id: 'profile_summary',
@@ -310,13 +310,13 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'content_dna',
     type: 'content-dna',
-    mascotText: 'And this is your Content DNA — what you post and how it lands.',
+    mascotText: 'And this is your Content DNA: what you post and how it lands.',
   },
 
-  // F4 — Creator DNA quiz. Continues from the F3 Content DNA reveal and profiles
+  // F4. Creator DNA quiz. Continues from the F3 Content DNA reveal and profiles
   // the creator's niche, topics, style, habits and gear. All config-driven and
   // reusing the F1/F2 archetypes; answers persist by `id`. The closing card
-  // (dna_complete) is a plain CTA that just advances — it deliberately does NOT
+  // (dna_complete) is a plain CTA that just advances. It deliberately does NOT
   // call complete(); that belongs to F6's paywall, which appends after this.
   {
     id: 'niche',
@@ -390,7 +390,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'grow_faster',
     type: 'interstitial',
-    mascotText: 'One thing worth knowing…',
+    mascotText: 'Here’s what the numbers say.',
     defaultValue: 'yes',
     headline: 'Creators who follow a plan grow ~70% faster.',
     body: 'We’ll turn your Creator DNA into a plan built around what you love making.',
@@ -435,7 +435,7 @@ export const onboardingSteps: OnboardingStep[] = [
     icon: 'sparkles',
   },
 
-  // F5 — Goals & growth plan. Continues from the F4 Creator DNA close. Two goal
+  // F5. Goals & growth plan. Continues from the F4 Creator DNA close. Two goal
   // questions (the second optional), a motivational interstitial, a cosmetic
   // "personalising" timer, then the Projected Growth reveal (the temporary end;
   // F6 appends the paywall + flips the router gate after this).
@@ -456,7 +456,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'goal_secondary',
     type: 'single-select',
-    mascotText: 'Any secondary goal? Totally optional — skip if you like.',
+    mascotText: 'Any secondary goal? Totally optional, skip if you like.',
     optional: true,
     options: [
       { value: 'grow_following', label: 'Grow my following', icon: 'trending-up-outline' },
@@ -470,9 +470,9 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'strategy_ready',
     type: 'interstitial',
-    mascotText: 'Perfect — I’ve got what I need.',
+    mascotText: 'I’ve got what I need.',
     defaultValue: 'yes',
-    headline: 'Let’s make it happen.',
+    headline: 'Your strategy is next.',
     body: 'I’ll turn everything you told me into a personal strategy built around your goals.',
     options: [
       { value: 'yes', label: 'Get my Personal Strategy' },
@@ -498,14 +498,14 @@ export const onboardingSteps: OnboardingStep[] = [
     goalKey: 'goal',
   },
 
-  // F6 — close. Social proof, a (UI-only) notifications opt-in, a locked ideas
+  // F6. Close. Social proof, a (UI-only) notifications opt-in, a locked ideas
   // teaser, then the paywall. `paywall` MUST stay last: the driver treats the
   // final step as the one that calls complete(), and the paywall owns its own
   // CTA + ✕ (both finish the funnel).
   {
     id: 'rating',
     type: 'rating',
-    mascotText: 'You’re in good company.',
+    mascotText: 'See what other creators say.',
     headline: 'Loved by creators',
     body: 'Thousands of creators use their plan to post with intent instead of guessing.',
     testimonials: [
@@ -531,7 +531,7 @@ export const onboardingSteps: OnboardingStep[] = [
     type: 'notifications',
     mascotText: 'Want me to keep you on track?',
     headline: 'Turn on growth reminders',
-    body: 'A quick nudge when it’s the right time to post — nothing noisy.',
+    body: 'A quick nudge when it’s the right time to post. Nothing noisy.',
     defaultValue: 'allow',
     perks: [
       'Your best posting times',
@@ -559,7 +559,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'paywall',
     type: 'paywall',
-    mascotText: 'Last thing — let’s switch your plan on.',
+    mascotText: 'Last thing, let’s switch your plan on.',
     headline: 'Unlock your growth plan',
     body: 'Everything we just built, plus fresh ideas every week.',
     ctaLabel: 'Activate My Plan Now',

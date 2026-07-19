@@ -37,14 +37,14 @@ git -C "$REPO" worktree add -b "$BRANCH" "$WT" main >&2
 # push its server root up to the common parent (…/app-projects) and hand the
 # device a broken entry path like `./social-ai/node_modules/expo-router/entry`
 # (Unable to resolve module … on scan). A hardlink copy lives physically inside
-# the worktree — same inodes, ~1s, near-zero extra disk on one filesystem — so
+# the worktree (same inodes, ~1s, near-zero extra disk on one filesystem) so
 # Metro keeps its server root at the worktree and the entry resolves. `-a`
 # preserves inner .bin symlinks as-is.
 cp -al "$REPO/node_modules" "$WT/node_modules"
 if [ -e "$REPO/.env" ]; then
   ln -s "$REPO/.env" "$WT/.env"
 else
-  echo "worktree-create: warning — $REPO/.env not found; app may lack Supabase keys" >&2
+  echo "worktree-create: warning: $REPO/.env not found; app may lack Supabase keys" >&2
 fi
 
 # Belt-and-suspenders: the repo's .gitignore uses `node_modules/` (dir only),

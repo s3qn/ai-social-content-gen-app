@@ -27,7 +27,7 @@ const FOOTER_HEIGHT = 132;
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 type ThemedScreenProps = {
-  /** Which character owns this tab — drives the focus color transition. */
+  /** Which character owns this tab, drives the focus color transition. */
   character: CharacterId;
   /** Header row content (laid out left/right in the hill header). */
   header: ReactNode;
@@ -81,7 +81,7 @@ export function ThemedScreen({ character, header, children }: ThemedScreenProps)
  *
  * Every `HillHeader` reads the same global `themeIndex`, so a screen's hill is
  * mid-morph toward another character's hue during the 450ms tab fade. Ink
- * resolved statically per screen therefore goes wrong mid-transition — white on
+ * resolved statically per screen therefore goes wrong mid-transition: white on
  * Virlo's light lime, or Virlo's dark ink on a still-dark hill. Driving ink from
  * the same value keeps the two in lockstep. It *steps* rather than blends; see
  * `INK_STEP` for why interpolating ink is unreadable at the crossover.

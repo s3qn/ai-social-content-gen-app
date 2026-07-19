@@ -13,7 +13,7 @@ type Props = {
 };
 
 /**
- * F3 — Profile Summary reveal. Composes the real stat tiles + the score meter
+ * F3, Profile Summary reveal. Composes the real stat tiles + the score meter
  * from the scan result stored in context. The meter prefers the backend's real
  * Claude score and falls back to its local heuristic when that's null. Falls
  * back gracefully if the scan result is missing entirely.

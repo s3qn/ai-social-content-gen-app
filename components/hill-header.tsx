@@ -38,7 +38,7 @@ type HillHeaderProps = {
  * The dissolve is an alpha `Mask`, not a fade to the page color: the page wash
  * is itself animated per character, so fading to any fixed color would leave a
  * seam on three of the four tabs. Masking to transparent lets whatever wash is
- * underneath show through exactly. Both gradients use static stops — animating
+ * underneath show through exactly. Both gradients use static stops: animating
  * gradient <Stop> colors is unreliable on Fabric, so only the path fill animates.
  */
 export function HillHeader({ height = 72, style, children }: HillHeaderProps) {

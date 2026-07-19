@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start the scan service on 127.0.0.1:8010 ONLY.
-# This host has a public IP — never bind 0.0.0.0.
+# This host has a public IP, never bind 0.0.0.0.
 set -euo pipefail
 
 cd "$(dirname "$0")"

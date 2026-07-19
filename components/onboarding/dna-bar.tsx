@@ -52,7 +52,7 @@ export function DnaBar({ breakdown, engagement }: Props) {
           <View key={s.key} style={styles.legendRow}>
             <View style={[styles.dot, { backgroundColor: s.color }]} />
             <Text style={styles.legendLabel}>{s.label}</Text>
-            <Text style={styles.legendPct}>{hasData ? `${pct[s.key] ?? 0}%` : '—'}</Text>
+            <Text style={styles.legendPct}>{hasData ? `${pct[s.key] ?? 0}%` : '-'}</Text>
           </View>
         ))}
       </View>

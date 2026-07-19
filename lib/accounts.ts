@@ -2,7 +2,7 @@
  * The Instagram accounts a user has connected, in Supabase.
  *
  * Owning at least one of these is what grants access to the app (see the guards
- * in app/_layout.tsx) — an email account is optional and only exists to sync and
+ * in app/_layout.tsx). An email account is optional and only exists to sync and
  * to hold MORE than one connected account.
  *
  * Everything here degrades gracefully, mirroring lib/scan-cache.ts: if the
@@ -106,7 +106,7 @@ export async function addAccount(
 export async function setActive(userId: string, rawHandle: string): Promise<boolean> {
   const handle = normalizeHandle(rawHandle);
   try {
-    // Deactivate first — the partial unique index allows only one active row.
+    // Deactivate first: the partial unique index allows only one active row.
     await supabase
       .from('connected_accounts')
       .update({ is_active: false })

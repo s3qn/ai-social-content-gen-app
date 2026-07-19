@@ -11,11 +11,11 @@ POST /scan  {"username": "..."}  ->
 
 `dna` / `score` come from analyze.ai_content_dna(). That call is best-effort:
 if the Anthropic key is missing or the call fails, both stay null and the real
-Apify-derived stats are returned as normal — the scan never fails on AI.
+Apify-derived stats are returned as normal. The scan never fails on AI.
 
 Security:
   - Bearer auth: Authorization: Bearer <SCAN_TOKEN>, constant-time compared.
-  - Bound to 127.0.0.1:8010 only (see run.sh) — this host has a public IP.
+  - Bound to 127.0.0.1:8010 only (see run.sh). This host has a public IP.
   - Handle validated (strip @, [A-Za-z0-9._] only, non-empty, length-capped).
   - Typed JSON errors, never a stack trace.
 """

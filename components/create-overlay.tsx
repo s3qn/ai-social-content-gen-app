@@ -184,7 +184,7 @@ export function CreateOverlay() {
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, containerStyle]}>
-      {/* Backdrop — tapping anywhere off a button dismisses. */}
+      {/* Backdrop: tapping anywhere off a button dismisses. */}
       <Pressable
         style={StyleSheet.absoluteFill}
         accessibilityRole="button"
@@ -220,7 +220,7 @@ export function CreateOverlay() {
                 accessibilityLabel={o.label}
                 onPress={() => {
                   dismiss();
-                  // TODO: real creation flow (later phase) — wire per-type editor here.
+                  // TODO: real creation flow (later phase). Wire per-type editor here.
                 }}
                 style={({ pressed }) => [
                   styles.button,

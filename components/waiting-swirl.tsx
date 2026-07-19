@@ -18,18 +18,18 @@ import AnimatedGlow, { type PresetConfig } from 'react-native-animated-glow';
 // This is built on `react-native-animated-glow` (Skia + Reanimated, animating on
 // the UI thread). An earlier hand-rolled react-native-svg version tried to fake
 // the bloom by stacking concentric translucent strokes; that can't work, because
-// a glow IS a blur — hard-edged strokes always band into visible stripes instead
+// a glow IS a blur: hard-edged strokes always band into visible stripes instead
 // of falling off, and stacking enough of them to hide the banding dropped
 // frames. `glowSize: [dx, dy, blurRadius]` below is a real blurred shadow.
 //
 // Not a modal: no backdrop, `pointerEvents: 'none'`, so the screen underneath
 // stays legible and interactive.
 
-// The ring is sized to the FULL screen in exact pixels — no inset, no flex.
+// The ring is sized to the FULL screen in exact pixels: no inset, no flex.
 //
 // Two reasons it must be exact. First, AnimatedGlow measures its own outer View
 // via onLayout and draws the ring on that box, while `children` live in a
-// separate auto-sized wrapper — so a `flex: 1` child collapses to zero height
+// separate auto-sized wrapper, so a `flex: 1` child collapses to zero height
 // and drags the measured box in from the edges. Second, no inset is needed for
 // the bloom: the library already renders its Skia canvas at GLOW_CANVAS_MARGIN
 // (100px) beyond the box on every side, so the glow spills off the screen edge
@@ -112,7 +112,7 @@ export function beginWaiting() {
 }
 
 export function endWaiting() {
-  if (refCount === 0) return; // already settled — don't go negative
+  if (refCount === 0) return; // already settled, don't go negative
   refCount -= 1;
   if (refCount === 0) listeners.forEach((l) => l(false));
 }
@@ -188,7 +188,7 @@ export function WaitingSwirl() {
 
   if (!visible || W === 0) return null;
 
-  // Exact pixels, not flex — see the note on sizing above.
+  // Exact pixels, not flex. See the note on sizing above.
   const box = { width: W, height: H };
 
   return (

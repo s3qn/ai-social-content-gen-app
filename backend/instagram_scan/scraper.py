@@ -1,4 +1,4 @@
-"""Apify Instagram scraping — profile + posts only.
+"""Apify Instagram scraping: profile + posts only.
 
 Copied and trimmed from the AI-Social-Content-Generator ingestion module:
 we keep only the PROFILE half (profile details + recent posts) and drop the

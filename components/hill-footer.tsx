@@ -13,7 +13,7 @@ import { useTheme } from '@/contexts/theme';
  * broad arc this used to draw) is what makes the band read as hills instead of
  * stacked color bands.
  *
- * The backmost ridge rises to 0.88 — above TAB_BAR_CLEARANCE — so the floating
+ * The backmost ridge rises to 0.88 (above TAB_BAR_CLEARANCE), so the floating
  * tab bar sits against color rather than against the bare page wash.
  */
 const LAYERS = [
@@ -88,7 +88,7 @@ function FooterLayer({ index, height }: { index: number; height: number }) {
 /**
  * Decorative layered "hills" that close the character motif at the bottom.
  * Colors self-drive from the shared `themeIndex`, so they cross-fade with the
- * rest of the scheme on tab change. Purely visual — pointerEvents none.
+ * rest of the scheme on tab change. Purely visual: pointerEvents none.
  *
  * The backmost ridge deliberately uses the same tone as the header hill, so the
  * top and bottom of the screen resolve to one color family instead of reading

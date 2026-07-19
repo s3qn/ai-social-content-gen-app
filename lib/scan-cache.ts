@@ -4,7 +4,7 @@
  * Instagram scans are expensive (each one spends Apify credits), so we persist
  * every result in the `instagram_scans` Supabase table keyed by (user_id,
  * handle). A subsequent scan of the same handle by the same user within
- * `CACHE_TTL_MS` is served straight from the row — the backend/Apify actor is
+ * `CACHE_TTL_MS` is served straight from the row. The backend/Apify actor is
  * never called.
  *
  * Everything degrades gracefully: with no signed-in user, or if the table is
@@ -22,7 +22,7 @@ const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /**
  * Best-effort write of a fresh scan into the cache. Any failure (missing table,
- * RLS, network) is swallowed — a cache-write failure must never break the scan.
+ * RLS, network) is swallowed. A cache-write failure must never break the scan.
  */
 async function cacheResult(userId: string, handle: string, result: ScanResult): Promise<void> {
   try {
@@ -38,7 +38,7 @@ async function cacheResult(userId: string, handle: string, result: ScanResult): 
         { onConflict: 'user_id,handle' },
       );
   } catch {
-    // Swallow — caching is a nicety, the scan already succeeded.
+    // Swallow: caching is a nicety, the scan already succeeded.
   }
 }
 
@@ -71,12 +71,12 @@ export async function scanProfileCached(
     if (!error && data) {
       const fetchedAt = new Date(data.fetched_at as string).getTime();
       if (Number.isFinite(fetchedAt) && Date.now() - fetchedAt < CACHE_TTL_MS) {
-        // Fresh hit — return cached result, DO NOT call the backend.
+        // Fresh hit: return cached result, DO NOT call the backend.
         return data.result as ScanResult;
       }
     }
   } catch {
-    // Table missing / network / RLS — fall through to a live scan below.
+    // Table missing / network / RLS: fall through to a live scan below.
   }
 
   // Cache miss/stale/error → live scan, then best-effort cache the fresh result.

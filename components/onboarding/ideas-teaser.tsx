@@ -45,7 +45,7 @@ function useReduceTransparency() {
 }
 
 /**
- * F6 — locked "content ideas" teaser. A few illustrative idea cards rendered
+ * F6, locked "content ideas" teaser. A few illustrative idea cards rendered
  * BEHIND a blur with a lock badge, so the value is visible but not readable.
  * The cards are placeholder copy (no generation happens here); unlocking is the
  * paywall's job on the next step.

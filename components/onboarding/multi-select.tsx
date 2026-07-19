@@ -29,7 +29,7 @@ export function MultiSelect({ options, value, onChange, max }: Props) {
     if (value.includes(v)) {
       onChange(value.filter((x) => x !== v));
     } else {
-      if (max !== undefined && value.length >= max) return; // at cap — ignore
+      if (max !== undefined && value.length >= max) return; // at cap, ignore
       onChange([...value, v]);
     }
   };

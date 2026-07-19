@@ -30,7 +30,7 @@ export default function SettingsScreen() {
   // Dev/utility entry. The router gate (app/_layout.tsx) is live as of F6, so
   // clearing the flag is enough: the guard flips back to the onboarding group.
   // The explicit replace makes the hand-off deterministic rather than relying on
-  // the guard's fallback redirect. Kept deliberately — without it there's no way
+  // the guard's fallback redirect. Kept deliberately: without it there's no way
   // to re-test the funnel once the gate is enforced.
   const replayOnboarding = () => {
     resetOnboarding();
@@ -64,7 +64,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Dev/utility row — the only way back into the funnel now that the gate
+      {/* Dev/utility row: the only way back into the funnel now that the gate
           is enforced. */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Developer</Text>

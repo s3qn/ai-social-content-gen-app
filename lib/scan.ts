@@ -9,7 +9,7 @@
  *
  * The response shape mirrors backend/instagram_scan/main.py. `dna` and `score`
  * come from the backend's best-effort Claude pass and are null whenever that
- * pass is unconfigured or fails — callers must handle both.
+ * pass is unconfigured or fails. Callers must handle both.
  */
 
 const SCAN_URL = process.env.EXPO_PUBLIC_SCAN_URL;
@@ -40,7 +40,7 @@ export type EngagementInsight = {
 
 /**
  * Claude-derived content vibe + recurring themes. Null when the backend's AI
- * pass is unavailable (no key) or failed — the UI falls back to its stub.
+ * pass is unavailable (no key) or failed. The UI falls back to its stub.
  */
 export type ContentDna = {
   vibe: string;
@@ -164,7 +164,7 @@ export async function scanProfile(username: string): Promise<ScanResult> {
       const body = (await res.json()) as { error?: string };
       code = body?.error;
     } catch {
-      // no/invalid JSON body — fall back to status mapping
+      // no/invalid JSON body: fall back to status mapping
     }
     throw mapHttpError(res.status, code);
   }

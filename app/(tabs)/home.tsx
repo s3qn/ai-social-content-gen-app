@@ -12,14 +12,14 @@ import { Spacing } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useTheme } from '@/contexts/theme';
 
-// The Home tab belongs to Virlo (green — Viral Growth).
+// The Home tab belongs to Virlo (green: Viral Growth).
 export default function HomeScreen() {
   const { scheme } = useTheme();
   // Character theme (drives the InstagramPill hue) follows light/dark.
   const theme = charactersFor(scheme).virlo;
   // The real connected account the user onboarded. Owning one is what let them
   // reach this screen at all (see the guards in app/_layout.tsx), so it is
-  // normally non-null — the pill still handles null defensively.
+  // normally non-null. The pill still handles null defensively.
   const { activeAccount } = useAccounts();
   const [switcherOpen, setSwitcherOpen] = useState(false);
 

@@ -33,7 +33,7 @@ type Props = {
 
 /**
  * Per-goal illustrative growth multiplier applied to today's followers. These
- * are deliberately motivational, NOT a real forecast — the copy says so.
+ * are deliberately motivational, NOT a real forecast. The copy says so.
  */
 const GOAL_FACTORS: Record<string, number> = {
   grow_following: 2.5,
@@ -66,7 +66,7 @@ const LINE_BOTTOM = '#1D976C';
 const AREA_TOP = '#1D976C';
 
 // Normalized chart points (x, y) where x is left→right and y is bottom(0)→top(1).
-// A gentle rising zig-zag that trends clearly upward — reads like a stocks app.
+// A gentle rising zig-zag that trends clearly upward, reads like a stocks app.
 // The final point is inset off the corner so the arrowhead has headroom.
 const NORM_POINTS: [number, number][] = [
   [0.0, 0.1],
@@ -83,7 +83,7 @@ const PAD_T = 34;
 const PAD_B = 18;
 
 /**
- * F5 — Projected Growth reveal. Reads today's followers from the stored scan
+ * F5: Projected Growth reveal. Reads today's followers from the stored scan
  * result and the chosen `goal`, then renders an illustrative Today → target
  * projection as a stock-style rising line/arrow chart (SVG) with a green area
  * gradient. The line PLOTS ITSELF on entry (left→right trace, area fades in,
@@ -101,11 +101,11 @@ export function GrowthChart({ goal, onRescan }: Props) {
 
   const today = scanResult?.stats?.followers ?? null;
 
-  // Draw-on drivers (SVG props can't use the native driver — fine for one-shots):
-  //  · `dash`  — stroke-dashoffset from the full line length → 0 (reveals the
+  // Draw-on drivers (SVG props can't use the native driver, fine for one-shots):
+  //  · `dash`: stroke-dashoffset from the full line length → 0 (reveals the
   //              line Today→arrow, left→right).
-  //  · `area`  — fillOpacity of the gradient area, 0 → 1.
-  //  · `arrow` — arrowhead opacity + a small upward translate, popping at the end.
+  //  · `area`: fillOpacity of the gradient area, 0 → 1.
+  //  · `arrow`: arrowhead opacity + a small upward translate, popping at the end.
   const dash = useRef(new Animated.Value(0)).current;
   const area = useRef(new Animated.Value(0)).current;
   const arrow = useRef(new Animated.Value(0)).current;

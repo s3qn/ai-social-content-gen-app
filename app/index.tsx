@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/auth';
 //   no session (anonymous or real) -> /welcome
 //   session, no connected account  -> /step  (the onboarding funnel)
 //   session + >=1 connected account -> /home
-// The gate is CONNECTED ACCOUNTS, not having signed up — an anonymous user with
+// The gate is CONNECTED ACCOUNTS, not having signed up. An anonymous user with
 // one connected account goes straight to /home. Both flags are seeded
 // synchronously, so this picks the right destination on the first render (no
 // welcome-screen / tab flash).

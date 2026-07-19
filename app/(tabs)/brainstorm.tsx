@@ -7,7 +7,7 @@ import {
 } from '@/components/themed-screen';
 import { BRAINSTORMS, IDEAS } from '@/constants/mock-screens';
 
-// The Ideas tab belongs to Enga (purple — Engagement).
+// The Ideas tab belongs to Enga (purple: Engagement).
 export default function BrainstormScreen() {
   return (
     <ThemedScreen

@@ -11,25 +11,25 @@ import { useTheme } from '@/contexts/theme';
 /**
  * Onboarding-LOCAL gradient helpers. Instagram-style brand gradients applied to
  * the check / confirm affordances within the onboarding flow ONLY. Fixed brand
- * gradients (identical in light + dark by design) — the neutral theme palette
+ * gradients (identical in light + dark by design). The neutral theme palette
  * still drives everything around them.
  *
- * Ticks use a RADIAL ("inside out") fill — bright core radiating to a deeper
+ * Ticks use a RADIAL ("inside out") fill: bright core radiating to a deeper
  * edge. The primary CTA uses a subtle dark-GREEN linear fill (green-forward but
  * still deep, not a loud bright pill).
  */
 
-// "Mojito" tick — bright light-green core -> deep-green edge (check affordances).
+// "Mojito" tick: bright light-green core -> deep-green edge (check affordances).
 const MOJITO_CORE = '#A8FBC8';
 const MOJITO_EDGE = '#1D976C';
 
-// Primary CTA — a green pill in the Mojito family. Theme-aware: on DARK surfaces
+// Primary CTA: a green pill in the Mojito family. Theme-aware: on DARK surfaces
 // a brighter pair reads well; on LIGHT (white) surfaces the same-shade greens
 // look washed out, so we deepen them for contrast against the page + white label.
 const BTN_COLORS_DARK = ['#2CB489', '#1D976C'] as const;
 const BTN_COLORS_LIGHT = ['#1D976C', '#146F51'] as const;
 
-/** "Lemon Twist" — a small, subtle accent (the progress-bar fill). */
+/** "Lemon Twist": a small, subtle accent (the progress-bar fill). */
 export const LEMON = ['#3CA55C', '#B5AC49'] as const;
 
 /**
@@ -98,7 +98,7 @@ type ButtonProps = {
 };
 
 /**
- * The onboarding primary confirm/continue CTA — a subtle dark-green pill.
+ * The onboarding primary confirm/continue CTA: a subtle dark-green pill.
  * Mirrors the shared BlackButton's shape + API but is scope-local to onboarding
  * so the shared button is never touched. Full-width via `alignSelf:'stretch'`.
  */

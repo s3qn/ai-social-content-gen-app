@@ -102,7 +102,7 @@ export function WelcomeAura() {
 
   return (
     <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {/* Wash — the "body of water" rising from below */}
+      {/* Wash: the "body of water" rising from below */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, washStyle]}>
         <LinearGradient
           colors={[
@@ -158,7 +158,7 @@ export function WelcomeAura() {
         </Svg>
       </Animated.View>
 
-      {/* Hollow ring — soft mint halo under a bright neon core band, transparent centre */}
+      {/* Hollow ring: soft mint halo under a bright neon core band, transparent centre */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, ringStyle]}>
         <Svg width={W} height={H}>
           <Defs>

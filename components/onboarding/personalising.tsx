@@ -24,7 +24,7 @@ type Props = {
 const DEFAULT_DURATION_MS = 3600;
 
 /**
- * F5 — "Personalising Your Growth Strategy" cosmetic checklist.
+ * F5, "Personalising Your Growth Strategy" cosmetic checklist.
  *
  * Unlike the F2 ScanChecklist, this calls NO real fetch. A self-contained timer
  * ticks the rows spinner → `GradientTick` one at a time; when the last row
@@ -53,7 +53,7 @@ export function Personalising({ rows, durationMs, alreadyDone, onDone }: Props) 
   useEffect(() => {
     mounted.current = true;
 
-    // Already completed (e.g. navigating back) — leave every row ticked.
+    // Already completed (e.g. navigating back), leave every row ticked.
     if (alreadyDone) {
       return () => {
         mounted.current = false;

@@ -13,7 +13,7 @@ type Props = {
 
 /**
  * Graceful fallback for the reveal steps when the scan result is missing (e.g.
- * storage cleared, or the step was reached out of order). Never crashes — offers
+ * storage cleared, or the step was reached out of order). Never crashes, offers
  * a one-tap way back to the scan.
  */
 export function RevealFallback({ onRescan }: Props) {

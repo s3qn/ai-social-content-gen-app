@@ -25,7 +25,7 @@ import { normalizeHandle } from '@/lib/handle';
  * SYNCHRONOUSLY from the expo-sqlite localStorage shim on first render, then
  * reconciled against Supabase in the background.
  *
- * Seeding synchronously is not a style preference — `hasAccounts` is a ROUTER
+ * Seeding synchronously is not a style preference. `hasAccounts` is a ROUTER
  * GUARD (app/_layout.tsx). Resolving it in an effect would flip the guard a
  * frame after mount, which is exactly what froze the native tab bar before (see
  * the comment block in contexts/auth.tsx). Never make this async.
@@ -103,7 +103,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   }, [uid]);
 
   // Reconcile with Supabase in the background. `null` means we could not reach
-  // it — keep the mirror rather than wiping the user's accounts while offline.
+  // it. Keep the mirror rather than wiping the user's accounts while offline.
   useEffect(() => {
     if (!uid) return;
     let mounted = true;
@@ -141,7 +141,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
         const handle = normalizeHandle(rawHandle);
         if (!handle) return;
         applyLocal((prev) => [
-          // Only one account may be active at a time — the DB enforces the same
+          // Only one account may be active at a time. The DB enforces the same
           // rule via the connected_accounts_one_active partial unique index.
           { handle, ...meta, isActive: true },
           ...prev.filter((a) => a.handle !== handle).map((a) => ({ ...a, isActive: false })),

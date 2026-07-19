@@ -1,6 +1,6 @@
 -- 0003_connected_accounts.sql
 -- The Instagram accounts a user has onboarded ("connected"). Having at least one
--- row here is what grants access to the app — not having an email account, which
+-- row here is what grants access to the app, not having an email account, which
 -- stays optional and exists only to sync/track MORE than one account.
 --
 -- One row per (user_id, handle), deliberately the SAME key shape as

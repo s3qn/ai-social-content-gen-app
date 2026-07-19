@@ -17,7 +17,7 @@ const AVATAR = 32;
  * checked. "Add account" re-enters the onboarding funnel to scan another handle.
  *
  * Tracking more than one account is the reason to create an email account, so an
- * anonymous user gets a one-line upsell here — the one place that payoff is
+ * anonymous user gets a one-line upsell here, the one place that payoff is
  * actually visible.
  */
 export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -35,7 +35,7 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
   const addAnother = () => {
     onClose();
     // The onboarding group is guard-protected on `!hasAccounts`, which is false
-    // here — so push the route explicitly rather than relying on the guard.
+    // here, so push the route explicitly rather than relying on the guard.
     router.push('/step');
   };
 

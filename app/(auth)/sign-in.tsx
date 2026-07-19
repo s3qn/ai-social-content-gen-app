@@ -31,7 +31,7 @@ export default function SignInScreen() {
       setSubmitting(false);
     }
     // On success the route guard flips (isSignedIn), which unmounts this screen
-    // and enters the tabs — no manual navigation needed.
+    // and enters the tabs, no manual navigation needed.
   };
 
   return (

@@ -39,7 +39,7 @@ function vibeChips(vibe: string): string[] {
 }
 
 /**
- * F3 — Content DNA reveal. The post-type DnaBar + engagement insight are always
+ * F3, Content DNA reveal. The post-type DnaBar + engagement insight are always
  * REAL scan data. The vibe chips + top themes come from the backend's Claude
  * analysis (`scanResult.dna`) when present, and fall back to STUB_DNA when it's
  * null. Falls back to RevealFallback if there's no scan result at all.
@@ -101,7 +101,7 @@ export function ContentDna({ onRescan }: Props) {
 
       <View style={styles.callout}>
         <Text style={styles.calloutText}>
-          🧬 This is your Content DNA — the mix, vibe and themes that make your profile yours.
+          🧬 This is your Content DNA: the mix, vibe and themes that make your profile yours.
         </Text>
       </View>
     </View>

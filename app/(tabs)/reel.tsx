@@ -9,7 +9,7 @@ import {
 } from '@/components/themed-screen';
 import { GLOBAL_TRENDS, RELATED } from '@/constants/mock-screens';
 
-// The Trends tab belongs to Spark (yellow — Momentum).
+// The Trends tab belongs to Spark (yellow: Momentum).
 export default function ReelScreen() {
   return (
     <ThemedScreen

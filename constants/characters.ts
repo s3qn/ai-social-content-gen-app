@@ -8,7 +8,7 @@
  * A screen statically knows which character it is (Home = Virlo), so it imports
  * its theme from here and passes it as a `theme` prop to the shared presentational
  * components (HillHeader, HillFooter, StatCard, PlanCalendar, InstagramPill).
- * No React context — there is no dynamic character switching within a screen.
+ * No React context: there is no dynamic character switching within a screen.
  *
  * Only chromatic roles live here. Neutral tokens (ink/muted/line/surface) come
  * from `theme.ts` so this file never duplicates the neutral design layer.
@@ -23,7 +23,7 @@ export type CharacterTheme = {
   name: string;
   /** One-line role, e.g. "Viral Growth". */
   tagline: string;
-  /** Brand color — the character's identity hue. Carries white text (buttons, markers). */
+  /** Brand color: the character's identity hue. Carries white text (buttons, markers). */
   primary: string;
   /**
    * Fill of the header hill. Split from `primary` because a hill may be far
@@ -34,7 +34,7 @@ export type CharacterTheme = {
   /** Header hill gradient stops (top → bottom). */
   hillTop: string;
   hillBottom: string;
-  /** Full-screen page background — a very light wash of `primary`. */
+  /** Full-screen page background: a very light wash of `primary`. */
   backgroundTint: string;
   /** Card background on the tinted page (kept white). */
   surface: string;
@@ -42,7 +42,7 @@ export type CharacterTheme = {
   onHill: string;
   /** Secondary text on the hill. */
   onHillMuted: string;
-  /** Scrim behind the header pill — tuned to stay visible on this hill's lightness. */
+  /** Scrim behind the header pill, tuned to stay visible on this hill's lightness. */
   pillScrim: string;
   /** Marker / highlight accent (may equal `primary` or a deeper shade). */
   accent: string;
@@ -50,11 +50,11 @@ export type CharacterTheme = {
   footerHills: string[];
 };
 
-/** Footer ridge count — every character supplies exactly this many `footerHills`. */
+/** Footer ridge count: every character supplies exactly this many `footerHills`. */
 export const FOOTER_LAYER_COUNT = 4;
 
 export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
-  // Home tab — the only fully-designed character this build.
+  // Home tab, the only fully-designed character this build.
   virlo: {
     id: 'virlo',
     name: 'Virlo',
@@ -62,7 +62,7 @@ export const CHARACTERS: Record<CharacterId, CharacterTheme> = {
     // Accent stays a deep lime so white text/markers still read on it.
     primary: '#3A8402',
     // The hill is the light lime from the design frame. Because it is light,
-    // on-hill ink flips to dark — the status bar is already dark in light mode.
+    // on-hill ink flips to dark. The status bar is already dark in light mode.
     hillFill: '#CFE58F',
     hillTop: '#CFE58F',
     hillBottom: '#BCD96B',

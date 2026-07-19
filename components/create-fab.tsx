@@ -100,6 +100,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.94 }], // static dip on press — no animation lib (avoids React Compiler)
+    transform: [{ scale: 0.94 }], // static dip on press, no animation lib (avoids React Compiler)
   },
 });

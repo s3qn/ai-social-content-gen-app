@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/theme';
 
 // Native OS tab bar (Liquid Glass on iOS 26 dev builds; renders in Expo Go too).
 // Relabelled Home/Peers/Ideas/Trends; route files unchanged. Icon tint follows
-// the active theme (updates as a prop change — the bar is not remounted, so the
+// the active theme (updates as a prop change. The bar is not remounted, so the
 // native-tab-freeze fix is unaffected).
 export default function TabLayout() {
   const { palette } = useTheme();

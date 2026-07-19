@@ -1,7 +1,7 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-// The ORIGINAL animated mascot from assets/images/virlo-wave.svg — SMIL
+// The ORIGINAL animated mascot from assets/images/virlo-wave.svg: SMIL
 // (bob / leaf sway / blink / arm wave) + the CSS @keyframes pop are kept intact.
 // react-native-svg can't run these, but a WebView (WebKit) does, so the mascot
 // animates itself with no Reanimated involved.

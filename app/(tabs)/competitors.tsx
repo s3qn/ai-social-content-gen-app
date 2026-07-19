@@ -9,7 +9,7 @@ import {
 } from '@/components/themed-screen';
 import { NEW_POSTS, PEERS } from '@/constants/mock-screens';
 
-// The Peers tab belongs to Statto (blue — Smart Insights).
+// The Peers tab belongs to Statto (blue: Smart Insights).
 export default function CompetitorsScreen() {
   return (
     <ThemedScreen

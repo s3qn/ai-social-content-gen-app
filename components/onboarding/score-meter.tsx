@@ -37,7 +37,7 @@ export function verdictLabel(score: number): string {
  * Derives a deterministic 0–10 number client-side from the REAL engagement +
  * follower data. It blends the profile's engagement rate (avg likes+comments ÷
  * followers) with a log-scaled reach bonus, so the value varies per profile and
- * reads as real. This is NOT a hardcoded constant — it's the graceful fallback.
+ * reads as real. This is NOT a hardcoded constant. It's the graceful fallback.
  */
 export function computeScore(stats: ScanStats, engagement: EngagementInsight): number {
   const followers = stats.followers ?? 0;
@@ -71,7 +71,7 @@ function realScore(score: ProfileScore | null | undefined): number | null {
  * numeric score, and a verdict label. Prefers the real Claude score (+ its label
  * and one-line explanation) and falls back to the local heuristic when the
  * backend sent `score: null`. Theme-aware; the knob slides in on mount with
- * plain Animated (no Reanimated — `'use no memo'` keeps the compiler off).
+ * plain Animated (no Reanimated, `'use no memo'` keeps the compiler off).
  */
 export function ScoreMeter({ stats, engagement, score: aiScore }: Props) {
   const { palette } = useTheme();

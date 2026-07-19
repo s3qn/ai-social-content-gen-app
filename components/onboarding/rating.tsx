@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * F6 — "Loved by creators" social-proof card. STATIC content only: this
+ * F6, "Loved by creators" social-proof card. STATIC content only: this
  * deliberately does NOT call any store-review API (expo-store-review is not
  * installed and asking for a review mid-onboarding would be premature anyway).
  * The mascot line is rendered by the driver above this block.
@@ -54,7 +54,7 @@ export function Rating({ headline, body, testimonials }: Props) {
   );
 }
 
-/** Five filled stars — fixed gold so they read the same in light + dark. */
+/** Five filled stars, fixed gold so they read the same in light + dark. */
 function Stars({ size }: { size: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>

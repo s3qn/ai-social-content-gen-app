@@ -7,7 +7,7 @@ import type { ScanResult } from '@/lib/scan';
  * Onboarding progress + answers, structured exactly like contexts/theme.tsx:
  * the completion flag and stored answers are seeded SYNCHRONOUSLY from the same
  * expo-sqlite localStorage shim on first render. Seeding sync is the crux of the
- * native-tab-freeze fix — once F6 wires the router gate on `hasOnboarded`, the
+ * native-tab-freeze fix: once F6 wires the router gate on `hasOnboarded`, the
  * guard is already correct on the first paint and never flips after mount (a
  * late flip is what froze the native tab bar; see contexts/auth.tsx).
  *
@@ -32,7 +32,7 @@ type OnboardingState = {
   setScanResult: (result: ScanResult) => void;
   /** Mark onboarding complete (sets + persists the flag). */
   complete: () => void;
-  /** Clear the flag + answers — used by the temporary Settings dev entry so the
+  /** Clear the flag + answers, used by the temporary Settings dev entry so the
    *  flow can be replayed from the top. */
   reset: () => void;
 };
@@ -99,7 +99,7 @@ function readScan(uid: string | null): ScanResult | null {
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   // `session` is itself seeded synchronously by SessionProvider, so the user id
-  // is already known on the first render — the seeds below read the right bucket.
+  // is already known on the first render. The seeds below read the right bucket.
   const { session } = useAuth();
   const uid = session?.user?.id ?? null;
 

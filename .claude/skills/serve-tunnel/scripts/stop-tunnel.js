@@ -3,7 +3,7 @@
 // Usage: node stop-tunnel.js <slug>
 // Kills the tracked pid's process group (expo start spawns the ngrok agent as a
 // child, so killing the group takes both down). Missing pid / already-dead
-// process is not an error — we still remove the entry.
+// process is not an error. We still remove the entry.
 
 const { get, remove } = require('./state-lib');
 

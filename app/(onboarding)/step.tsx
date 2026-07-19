@@ -43,7 +43,7 @@ import { useTheme } from '@/contexts/theme';
  * straight to the onboarding context (so answers persist as you go). The last
  * step's "Continue" marks onboarding complete and exits.
  *
- * F6: the funnel now ends on the `paywall` step, which owns its OWN CTA — the
+ * F6: the funnel now ends on the `paywall` step, which owns its OWN CTA. The
  * driver hides its footer button there and the paywall calls `finish()` from
  * both "Activate My Plan Now" and the ✕ (soft paywall: never trap the user).
  * The router gate in app/_layout.tsx is live, so completing the funnel flips
@@ -64,7 +64,7 @@ export default function OnboardingDriver() {
   const answered = isAnswered(step, answers[step.id]);
   const isLast = index === total - 1;
 
-  // F4 — seed a sensible default the first time a step is shown so the user only
+  // F4: seed a sensible default the first time a step is shown so the user only
   // has to adjust, not pick from scratch (Continue is immediately enabled). Runs
   // once per step (keyed on index/id); no-op if the step has a stored answer or
   // carries no default. Only writes when the current answer is empty.
@@ -87,13 +87,13 @@ export default function OnboardingDriver() {
 
   const goBack = () => {
     if (index > 0) setIndex((i) => i - 1);
-    // F6 — with the gate live the funnel is the root for a not-yet-onboarded
+    // F6: with the gate live the funnel is the root for a not-yet-onboarded
     // user, so there's usually nothing behind it. Only pop when there actually
     // is history (e.g. entered via the Settings "Replay onboarding" row).
     else if (router.canGoBack()) router.back();
   };
 
-  // Jump straight back to the scan step — used by the reveal fallbacks when the
+  // Jump straight back to the scan step, used by the reveal fallbacks when the
   // scan result is missing so the flow can recover instead of dead-ending.
   const goToScan = () => {
     const scanIndex = onboardingSteps.findIndex((s) => s.type === 'scan');
@@ -103,8 +103,8 @@ export default function OnboardingDriver() {
   // Finish the funnel: connect the account the user just onboarded, then hand
   // over to the tabs.
   //
-  // Connecting is what actually opens the app — `hasAccounts` is the router
-  // guard in app/_layout.tsx — so it must happen before the replace. It is
+  // Connecting is what actually opens the app (`hasAccounts` is the router
+  // guard in app/_layout.tsx), so it must happen before the replace. It is
   // optimistic (the context updates in memory and mirrors to localStorage
   // immediately, then persists to Supabase in the background), so a slow or
   // unreachable database never stalls the end of onboarding.
@@ -126,7 +126,7 @@ export default function OnboardingDriver() {
   };
 
   // The paywall renders its own CTA + ✕, so the driver's footer button would be
-  // a duplicate — hide it and let the paywall drive the finish.
+  // a duplicate. Hide it and let the paywall drive the finish.
   const showFooter = step.type !== 'paywall';
 
   return (
@@ -141,7 +141,7 @@ export default function OnboardingDriver() {
           <Ionicons name="chevron-back" size={26} color={palette.ink} />
         </HapticPressable>
 
-        {/* Progress bar — fills as the user advances through the steps. */}
+        {/* Progress bar: fills as the user advances through the steps. */}
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]}>
             <LinearGradient
@@ -161,7 +161,7 @@ export default function OnboardingDriver() {
       <ScrollView
         contentContainerStyle={[
           styles.body,
-          // No footer on the paywall step — reserve the safe-area inset here so
+          // No footer on the paywall step: reserve the safe-area inset here so
           // its own CTA / links clear the home indicator.
           !showFooter && { paddingBottom: insets.bottom + Spacing.xxl },
         ]}
@@ -188,7 +188,7 @@ export default function OnboardingDriver() {
 
 /** Continue/Finish is enabled only when the current step has a valid answer. */
 function isAnswered(step: OnboardingStep, answer: unknown): boolean {
-  // F5 — an `optional` step never blocks Continue, whatever its type (e.g. the
+  // F5: an `optional` step never blocks Continue, whatever its type (e.g. the
   // skippable secondary goal). Checked before the per-type rules below.
   if (step.optional) return true;
   switch (step.type) {
@@ -200,7 +200,7 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
     case 'segmented':
     case 'interstitial':
     case 'notifications':
-      // F6 — the notifications opt-in still needs a pick ("Allow" or "Maybe
+      // F6: the notifications opt-in still needs a pick ("Allow" or "Maybe
       // later"); it's seeded with a defaultValue so Continue starts enabled.
       return typeof answer === 'string' && answer.length > 0;
     case 'scan':
@@ -215,7 +215,7 @@ function isAnswered(step: OnboardingStep, answer: unknown): boolean {
     case 'growth':
     case 'rating':
     case 'ideas-teaser':
-      // Reveal / CTA steps collect no answer — the button just advances the flow.
+      // Reveal / CTA steps collect no answer. The button just advances the flow.
       return true;
     case 'paywall':
       // The paywall hides the driver footer and finishes via its own CTA / ✕.
@@ -309,7 +309,7 @@ function renderStep(
         />
       );
     case 'notifications':
-      // UI-only — real expo-notifications permission wiring lands with push.
+      // UI-only: real expo-notifications permission wiring lands with push.
       return (
         <NotificationsOptIn
           headline={step.headline}
@@ -331,7 +331,7 @@ function renderStep(
       );
     case 'paywall':
       // STUB: no real IAP. Both the CTA and the ✕ record the chosen plan (if
-      // any) and finish onboarding — nothing is ever charged.
+      // any) and finish onboarding. Nothing is ever charged.
       return (
         <Paywall
           headline={step.headline}
@@ -352,7 +352,7 @@ function renderStep(
     case 'content-dna':
       return <ContentDna onRescan={goToScan} />;
     case 'text':
-      // No container box — the "@" prefix + field float directly on the themed
+      // No container box: the "@" prefix + field float directly on the themed
       // background. Big font + tall touch target; caret/selection use the accent.
       return (
         <View style={styles.textStep}>

@@ -14,7 +14,7 @@ type AuthState = {
   /**
    * Attach an email/password. On an ANONYMOUS session this upgrades the existing
    * user in place (same uuid), so connected_accounts / instagram_scans rows stay
-   * valid — there is nothing to migrate. Falls back to a fresh sign-up otherwise.
+   * valid. There is nothing to migrate. Falls back to a fresh sign-up otherwise.
    */
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;

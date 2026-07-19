@@ -6,11 +6,11 @@
 //   { "<slug>": { items: [ { text, checked }, ... ] } }
 // Override the path with DEV_TEST_CHECKLISTS (used by tests).
 //
-// Usage — items come as a JSON array on stdin (strings, or {text[,checked]}):
+// Usage: items come as a JSON array on stdin (strings, or {text[,checked]}):
 //   echo '["Scan QR opens the feature","Username field accepts @handles"]' \
 //     | node write-checklist.js --slug <slug>
 //
-// Re-running for the same slug REPLACES that slug's items (so `checked` resets —
+// Re-running for the same slug REPLACES that slug's items (so `checked` resets:
 // the feature changed, re-test it). Other slugs in the file are preserved.
 
 const fs = require('fs');

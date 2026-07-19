@@ -15,7 +15,7 @@ import Svg, { G, Path, Rect } from 'react-native-svg';
 // One-shot neon overlay. Two phases:
 //  1. Intro (~0.45s "mirror zipper"): two lines emerge from the top-center and
 //     bottom-center of the screen edge, split, and race down/up both sides,
-//     meeting at the left/right middle — the rounded border draws itself on.
+//     meeting at the left/right middle. The rounded border draws itself on.
 //  2. Swirl: a bright dashed arc travels once around the rounded frame over a
 //     dim static base ring, then everything fades out.
 // fill="none" keeps the screen centre transparent + interactive throughout.
@@ -136,7 +136,7 @@ export function ScreenSwirl() {
   const R = CORNER_RADIUS;
 
   // Four quarter paths. Each starts off-screen (above the top / below the bottom),
-  // pokes in through the edge center, then races to a side-middle — so the lines
+  // pokes in through the edge center, then races to a side-middle, so the lines
   // look like they emerge from the top and bottom of the phone.
   const dUR = `M ${XC} ${-EDGE_OVERSHOOT} V ${YT} H ${XR - R} A ${R} ${R} 0 0 1 ${XR} ${YT + R} V ${YC}`;
   const dUL = `M ${XC} ${-EDGE_OVERSHOOT} V ${YT} H ${XL + R} A ${R} ${R} 0 0 0 ${XL} ${YT + R} V ${YC}`;
@@ -148,7 +148,7 @@ export function ScreenSwirl() {
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }, fadeStyle]}>
       <Svg width={W} height={H}>
-        {/* (A) Dim static full-ring base — fades in at swirl start, persists under the arc */}
+        {/* (A) Dim static full-ring base: fades in at swirl start, persists under the arc */}
         <AnimatedG animatedProps={baseGroupProps}>
           <Rect {...ringGeom} stroke={CORE_COLOR} strokeWidth={THICKNESS} strokeLinecap="round" />
         </AnimatedG>

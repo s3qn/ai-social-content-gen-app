@@ -18,9 +18,9 @@ type Props = {
 };
 
 /**
- * F6 — notifications opt-in.
+ * F6, notifications opt-in.
  *
- * // UI-only — real expo-notifications permission wiring lands with push.
+ * // UI-only: real expo-notifications permission wiring lands with push.
  *
  * Nothing here touches the OS permission sheet: `expo-notifications` is not a
  * dependency and no part of the app sends a notification yet. Picking an option

@@ -34,17 +34,17 @@ type Props = {
   perks: PaywallPerk[];
   plans: PaywallPlan[];
   ctaLabel: string;
-  /** Called by BOTH the primary CTA and the ✕ — the paywall is deliberately soft. */
+  /** Called by BOTH the primary CTA and the ✕. The paywall is deliberately soft. */
   onFinish: (planId: string | null) => void;
 };
 
 /**
- * F6 — the final onboarding step: a SOFT paywall.
+ * F6, the final onboarding step: a SOFT paywall.
  *
  * // STUB: no real IAP. RevenueCat + dev build + store products is a later phase.
  *
  * Selecting a plan is local state only; "Activate My Plan Now" does not charge
- * anything — it just completes onboarding and drops the user into the app. The ✕
+ * anything. It just completes onboarding and drops the user into the app. The ✕
  * does the same, so the user can never be trapped here. Terms / Privacy /
  * Restore are inert placeholders until there is something real behind them.
  */
@@ -52,7 +52,7 @@ export function Paywall({ headline, body, perks, plans, ctaLabel, onFinish }: Pr
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
 
-  // Default to the "best value" plan (or the first one) — local state only.
+  // Default to the "best value" plan (or the first one), local state only.
   const [selected, setSelected] = useState<string | null>(
     () => (plans.find((p) => p.best) ?? plans[0])?.id ?? null,
   );
@@ -64,7 +64,7 @@ export function Paywall({ headline, body, perks, plans, ctaLabel, onFinish }: Pr
           <Text style={styles.headline}>{headline}</Text>
           {body ? <Text style={styles.body}>{body}</Text> : null}
         </View>
-        {/* Soft paywall escape hatch — completes onboarding, same as the CTA. */}
+        {/* Soft paywall escape hatch, completes onboarding, same as the CTA. */}
         <HapticPressable
           accessibilityRole="button"
           accessibilityLabel="Close"
@@ -126,7 +126,7 @@ export function Paywall({ headline, body, perks, plans, ctaLabel, onFinish }: Pr
         {['Terms', 'Privacy', 'Restore'].map((label, i) => (
           <View key={label} style={styles.linkItem}>
             {i > 0 ? <Text style={styles.linkDot}>·</Text> : null}
-            {/* Inert placeholders — no destination wired yet. */}
+            {/* Inert placeholders, no destination wired yet. */}
             <HapticPressable
               accessibilityRole="button"
               hitSlop={8}

@@ -33,7 +33,7 @@ export default function SignUpScreen() {
     }
     // On success (with email confirmation OFF) the route guard flips and enters
     // the tabs automatically. If confirmation is ON, no session is created until
-    // the emailed link is clicked — Phase 1 does not add a confirmation screen.
+    // the emailed link is clicked. Phase 1 does not add a confirmation screen.
   };
 
   return (

@@ -48,7 +48,7 @@ export const lightPalette = {
   tabIconMuted: 'rgba(131, 142, 96, 0.5)', // #838E60 @ 50% (inactive)
 } as const;
 
-/** The active palette shape — same keys as light, values differ by scheme. */
+/** The active palette shape: same keys as light, values differ by scheme. */
 export type AppPalette = Record<keyof typeof lightPalette, string>;
 
 export const darkPalette: AppPalette = {

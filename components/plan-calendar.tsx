@@ -27,7 +27,7 @@ function toWeeks(cells: (number | null)[]): (number | null)[][] {
 }
 
 /**
- * A month grid built from plain JS Date — no calendar library. Marks planned-post
+ * A month grid built from plain JS Date: no calendar library. Marks planned-post
  * days with a dot and highlights today with a filled circle; both accents self-drive
  * from the shared `themeIndex` (one reusable animated style, reused across cells) so
  * they cross-fade on tab change. Non-interactive (v1).

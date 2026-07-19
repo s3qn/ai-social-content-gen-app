@@ -33,7 +33,7 @@ type Props = {
 };
 
 // How long each intermediate row lingers as "in progress" before it ticks.
-// Purely cosmetic pacing — the real fetch runs the whole time underneath and,
+// Purely cosmetic pacing. The real fetch runs the whole time underneath and,
 // when it resolves, every remaining row snaps to done.
 const ROW_STAGGER_MS = 2200;
 
@@ -62,7 +62,7 @@ export function ScanChecklist({ rows, username, alreadyDone, onDone }: Props) {
   const [running, setRunning] = useState(false);
 
   // The scan can run 30–90s, long past the point the cosmetic row stagger runs
-  // out — the looping swirl carries the wait from there.
+  // out. The looping swirl carries the wait from there.
   useWaitingSwirl(running);
 
   // Guards so unmount / re-runs don't call setState on a dead component or
