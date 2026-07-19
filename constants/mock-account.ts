@@ -4,19 +4,9 @@
  * screens) so swapping in real data later is a one-file change.
  */
 
-export type InstagramAccount = {
-  /** Handle without the leading "@". */
-  handle: string;
-  displayName: string;
-  /** Optional avatar URL; falls back to an initials circle when absent. */
-  avatarUrl?: string;
-};
-
-/** The account currently being analyzed. Reuses the value already in the app. */
-export const MOCK_INSTAGRAM: InstagramAccount = {
-  handle: 'mock.creator',
-  displayName: 'Mock Creator',
-};
+// The connected-account mock that used to live here is gone: the Home header now
+// renders the user's real account from `contexts/accounts`, backed by the
+// `connected_accounts` table. The stats and calendar below are still UI-only.
 
 /** Day-of-month numbers with a planned post, for the Home "My Plan" calendar. */
 export const MARKED_DAYS: number[] = [3, 8, 9, 15, 22, 27];

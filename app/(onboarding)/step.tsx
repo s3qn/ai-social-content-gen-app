@@ -33,6 +33,7 @@ import { Segmented } from '@/components/onboarding/segmented';
 import { SingleSelect } from '@/components/onboarding/single-select';
 import { OnboardingStep, onboardingSteps } from '@/constants/onboarding-steps';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useAccounts } from '@/contexts/accounts';
 import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
 
@@ -46,13 +47,15 @@ import { useTheme } from '@/contexts/theme';
  * driver hides its footer button there and the paywall calls `finish()` from
  * both "Activate My Plan Now" and the ✕ (soft paywall: never trap the user).
  * The router gate in app/_layout.tsx is live, so completing the funnel flips
- * `hasOnboarded` and swaps the protected group over to the tabs.
+ * the scanned account, which flips `hasAccounts` and swaps the protected group
+ * over to the tabs.
  */
 export default function OnboardingDriver() {
   const insets = useSafeAreaInsets();
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const { answers, setAnswer, complete } = useOnboarding();
+  const { answers, setAnswer, complete, scanResult } = useOnboarding();
+  const { addAccount } = useAccounts();
 
   const total = onboardingSteps.length;
   const [index, setIndex] = useState(0);
@@ -97,11 +100,21 @@ export default function OnboardingDriver() {
     setIndex(scanIndex >= 0 ? scanIndex : 0);
   };
 
-  // Finish the funnel: persist the flag then hand over to the tabs. `complete()`
-  // flips `hasOnboarded`, which swaps the protected group in app/_layout.tsx;
-  // the explicit replace makes the destination deterministic instead of relying
-  // on the guard's fallback redirect.
+  // Finish the funnel: connect the account the user just onboarded, then hand
+  // over to the tabs.
+  //
+  // Connecting is what actually opens the app — `hasAccounts` is the router
+  // guard in app/_layout.tsx — so it must happen before the replace. It is
+  // optimistic (the context updates in memory and mirrors to localStorage
+  // immediately, then persists to Supabase in the background), so a slow or
+  // unreachable database never stalls the end of onboarding.
+  //
+  // `complete()` still runs so the funnel isn't replayed, but it no longer
+  // drives the gate.
   const finish = () => {
+    const handle = (answers.username as string | undefined) ?? '';
+    // stats.avatarUrl is nullable; the account meta wants `string | undefined`.
+    if (handle.trim()) addAccount(handle, { avatarUrl: scanResult?.stats?.avatarUrl ?? undefined });
     complete();
     router.replace('/home');
   };

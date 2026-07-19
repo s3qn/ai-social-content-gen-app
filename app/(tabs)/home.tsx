@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AccountSwitcher } from '@/components/account-switcher';
 import { InstagramPill } from '@/components/instagram-pill';
 import { PlanCalendar } from '@/components/plan-calendar';
 import { StatCard } from '@/components/stat-card';
 import { SectionHeading, SettingsGear, ThemedScreen } from '@/components/themed-screen';
 import { charactersFor } from '@/constants/characters';
-import { HOME_STATS, MARKED_DAYS, MOCK_INSTAGRAM } from '@/constants/mock-account';
+import { HOME_STATS, MARKED_DAYS } from '@/constants/mock-account';
 import { Spacing } from '@/constants/theme';
+import { useAccounts } from '@/contexts/accounts';
 import { useTheme } from '@/contexts/theme';
 
 // The Home tab belongs to Virlo (green — Viral Growth).
@@ -15,16 +17,22 @@ export default function HomeScreen() {
   const { scheme } = useTheme();
   // Character theme (drives the InstagramPill hue) follows light/dark.
   const theme = charactersFor(scheme).virlo;
-  // Instagram connection is a visual mock: tap the pill to toggle connect state.
-  const [account, setAccount] = useState<typeof MOCK_INSTAGRAM | null>(MOCK_INSTAGRAM);
-  const toggleConnect = () => setAccount((prev) => (prev ? null : MOCK_INSTAGRAM));
+  // The real connected account the user onboarded. Owning one is what let them
+  // reach this screen at all (see the guards in app/_layout.tsx), so it is
+  // normally non-null — the pill still handles null defensively.
+  const { activeAccount } = useAccounts();
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   return (
     <ThemedScreen
       character="virlo"
       header={
         <>
-          <InstagramPill theme={theme} account={account} onPress={toggleConnect} />
+          <InstagramPill
+            theme={theme}
+            account={activeAccount}
+            onPress={() => setSwitcherOpen(true)}
+          />
           <SettingsGear />
         </>
       }>
@@ -37,6 +45,8 @@ export default function HomeScreen() {
 
       <SectionHeading>My Plan</SectionHeading>
       <PlanCalendar markedDays={MARKED_DAYS} />
+
+      <AccountSwitcher visible={switcherOpen} onClose={() => setSwitcherOpen(false)} />
     </ThemedScreen>
   );
 }

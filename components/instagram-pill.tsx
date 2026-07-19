@@ -7,13 +7,14 @@ import { useOnHillInk } from '@/components/themed-screen';
 import { inkIndexFor, RAMPS, themeIndex } from '@/constants/theme-transition';
 import { useTheme } from '@/contexts/theme';
 import { CharacterTheme } from '@/constants/characters';
-import { InstagramAccount } from '@/constants/mock-account';
 import { Radius, Spacing, Type } from '@/constants/theme';
+import type { ConnectedAccount } from '@/lib/accounts';
 
 type InstagramPillProps = {
   theme: CharacterTheme;
-  /** The connected account, or null to show the "Connect" state. */
-  account: InstagramAccount | null;
+  /** The active connected account, or null to show the "Connect" state. */
+  account: ConnectedAccount | null;
+  /** Opens the account switcher. */
   onPress?: () => void;
 };
 
@@ -22,12 +23,14 @@ const AVATAR = 24;
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 /**
- * The account-being-analyzed pill that sits on the colored hill header.
- * Visual mock only: `onPress` is expected to toggle local screen state.
+ * The account-being-analyzed pill that sits on the colored hill header. Shows
+ * the user's ACTIVE connected account; tapping it opens the switcher.
  */
 export function InstagramPill({ theme, account, onPress }: InstagramPillProps) {
   'use no memo';
-  const initials = account ? account.displayName.slice(0, 1).toUpperCase() : '';
+  // displayName is optional (the scan may not return one), so fall back to the
+  // handle — every connected account always has one.
+  const initials = account ? (account.displayName ?? account.handle).slice(0, 1).toUpperCase() : '';
   const { scheme } = useTheme();
   const { PILL_SCRIMS } = RAMPS[scheme];
   const ink = useOnHillInk();

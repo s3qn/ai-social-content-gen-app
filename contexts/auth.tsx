@@ -5,8 +5,17 @@ import { supabase } from '@/lib/supabase';
 
 type AuthState = {
   isSignedIn: boolean;
+  /** True when this is an anonymous session (no email attached yet). */
+  isAnonymous: boolean;
   isLoading: boolean; // kept for API compat; always false now (seeded synchronously)
   session: Session | null; // raw Supabase session (for later phases)
+  /** Start an anonymous session so the user can onboard without signing up. */
+  startAnonymous: () => Promise<{ error: string | null }>;
+  /**
+   * Attach an email/password. On an ANONYMOUS session this upgrades the existing
+   * user in place (same uuid), so connected_accounts / instagram_scans rows stay
+   * valid — there is nothing to migrate. Falls back to a fresh sign-up otherwise.
+   */
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -73,9 +82,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () => ({
       // Single source of truth: derived from `session`, never tracked separately.
       isSignedIn: !!session,
+      isAnonymous: !!session?.user?.is_anonymous,
       isLoading: false,
       session,
+      startAnonymous: async () => {
+        const { error } = await supabase.auth.signInAnonymously();
+        return { error: error ? error.message : null };
+      },
       signUp: async (email, password) => {
+        // Anonymous → upgrade in place. `updateUser` keeps the SAME user id, so
+        // every connected_accounts / instagram_scans row already points at the
+        // right user and no data has to be copied anywhere.
+        if (session?.user?.is_anonymous) {
+          const { error } = await supabase.auth.updateUser({ email, password });
+          return { error: error ? error.message : null };
+        }
         const { error } = await supabase.auth.signUp({ email, password });
         return { error: error ? error.message : null };
       },

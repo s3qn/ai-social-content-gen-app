@@ -13,16 +13,12 @@
  * user applies supabase/migrations/0002_instagram_scans.sql.
  */
 
+import { normalizeHandle } from '@/lib/handle';
 import { supabase } from '@/lib/supabase';
 import { scanProfile, type ScanResult } from '@/lib/scan';
 
 /** How long a cached scan stays fresh before we re-scan. */
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-/** Normalize a handle for use as a stable cache key: lowercase, no leading @. */
-function normalizeHandle(username: string): string {
-  return username.trim().replace(/^@+/, '').toLowerCase();
-}
 
 /**
  * Best-effort write of a fresh scan into the cache. Any failure (missing table,
