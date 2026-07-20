@@ -8,6 +8,7 @@ import { HapticPressable } from '@/components/haptic-pressable';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useAuth } from '@/contexts/auth';
+import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
 import { promptAccountCap } from '@/lib/account-cap-prompt';
 
@@ -27,6 +28,7 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const { accounts, setActive, addBlocked } = useAccounts();
   const { isAnonymous } = useAuth();
+  const { clearScan } = useOnboarding();
 
   const pick = (handle: string) => {
     setActive(handle);
@@ -35,13 +37,19 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
 
   const addAnother = () => {
     // Capped users never enter the funnel: an anonymous user gets 1 account
-    // and is prompted to log in for more, an authenticated user tops out at 5.
-    // TODO(login-upgrade): promptAccountCap is a stub until the login flow exists.
+    // and is prompted to create an account for more, an authenticated user
+    // tops out at 5. Close the sheet first: the needs-auth prompt can navigate
+    // to /sign-up, and a push under this open Modal would land behind it.
     if (addBlocked) {
+      onClose();
       promptAccountCap(addBlocked);
       return;
     }
     onClose();
+    // Fresh scan run for the NEW account: drop the previous @username answer,
+    // the scan done flag, and the stored scan result, or the funnel replays the
+    // previous account's scan and ignores the newly typed handle.
+    clearScan();
     // The onboarding group is guard-protected on `!hasAccounts`, which is false
     // here, so push the route explicitly rather than relying on the guard.
     router.push('/step');

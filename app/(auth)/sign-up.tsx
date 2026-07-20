@@ -12,7 +12,7 @@ import { useTheme } from '@/contexts/theme';
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
-  const { signUp } = useAuth();
+  const { signUp, isAnonymous } = useAuth();
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
 
@@ -31,9 +31,11 @@ export default function SignUpScreen() {
       setError(result.error);
       setSubmitting(false);
     }
-    // On success (with email confirmation OFF) the route guard flips and enters
-    // the tabs automatically. If confirmation is ON, no session is created until
-    // the emailed link is clicked. Phase 1 does not add a confirmation screen.
+    // On success the route guard performs the navigation: a fresh sign-up gains
+    // a session, an anonymous upgrade flips isAnonymous false, and either way
+    // the (auth) group unmounts and the anchor redirect lands in the app. With
+    // email confirmation ON neither happens until the emailed link is clicked;
+    // there is no confirmation screen yet.
   };
 
   return (
@@ -51,7 +53,13 @@ export default function SignUpScreen() {
 
       <View style={styles.head}>
         <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Start turning ideas into posts in minutes.</Text>
+        {/* An anonymous user is UPGRADING in place (same user id), so the copy
+            promises continuity, not a fresh start. */}
+        <Text style={styles.subtitle}>
+          {isAnonymous
+            ? 'Your connected account and progress stay with you.'
+            : 'Start turning ideas into posts in minutes.'}
+        </Text>
       </View>
 
       <View style={styles.form}>

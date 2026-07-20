@@ -18,24 +18,27 @@ export const unstable_settings = {
   anchor: 'index',
 };
 
-// The navigator is memoized on two BOOLEANS (`hasSession`, `hasAccounts`),
-// never on the auth/accounts context objects themselves. Supabase emits a few
-// session updates at startup (INITIAL_SESSION, token refresh), and the accounts
-// context re-creates its value whenever the list is reconciled; both change the
-// context object without changing these flags. Without this memo each of those
-// would re-render the Stack and re-sync the native tab bar, which is exactly the
-// kind of churn that leaves its taps frozen. Keyed on the two primitives, the
-// tab subtree stays put unless the user actually gains/loses a session or
-// connects/removes their last account.
+// The navigator is memoized on three BOOLEANS (`hasSession`, `hasAccounts`,
+// `isAnonymous`), never on the auth/accounts context objects themselves.
+// Supabase emits a few session updates at startup (INITIAL_SESSION, token
+// refresh), and the accounts context re-creates its value whenever the list is
+// reconciled; both change the context object without changing these flags.
+// Without this memo each of those would re-render the Stack and re-sync the
+// native tab bar, which is exactly the kind of churn that leaves its taps
+// frozen. Keyed on the primitives, the tab subtree stays put unless the user
+// actually gains/loses a session, connects/removes their last account, or
+// upgrades from anonymous to a real identity.
 //
 // DO NOT widen this memo to pass objects/context values. That reintroduces the
 // native-tab freeze.
 const AuthedStack = memo(function AuthedStack({
   hasSession,
   hasAccounts,
+  isAnonymous,
 }: {
   hasSession: boolean;
   hasAccounts: boolean;
+  isAnonymous: boolean;
 }) {
   return (
     <Stack>
@@ -65,7 +68,14 @@ const AuthedStack = memo(function AuthedStack({
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack.Protected>
 
-      <Stack.Protected guard={!hasSession}>
+      {/* Routable when signed out (welcome/log in) AND while anonymous: the
+          anon → real upgrade lives on /sign-up, and an anonymous user HAS a
+          session, so `!hasSession` alone would unregister the one screen the
+          needs-auth cap signal routes to. When the upgrade succeeds
+          isAnonymous flips false, this guard unmounts the group, and the
+          router falls back to the anchor redirect (/home); same mechanism
+          sign-in relies on today. */}
+      <Stack.Protected guard={!hasSession || isAnonymous}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
@@ -78,9 +88,9 @@ const AuthedStack = memo(function AuthedStack({
 // The guards never flip after mount, and the native tab bar mounts on the first
 // commit. Never resolve either flag asynchronously / in an effect.
 function RootNavigator() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isAnonymous } = useAuth();
   const { hasAccounts } = useAccounts();
-  return <AuthedStack hasSession={isSignedIn} hasAccounts={hasAccounts} />;
+  return <AuthedStack hasSession={isSignedIn} hasAccounts={hasAccounts} isAnonymous={isAnonymous} />;
 }
 
 // Reads the resolved scheme (seeded synchronously by ThemeProvider, so the first

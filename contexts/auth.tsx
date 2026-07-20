@@ -92,10 +92,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       signUp: async (email, password) => {
         // Anonymous → upgrade in place. `updateUser` keeps the SAME user id, so
         // every connected_accounts / instagram_scans row already points at the
-        // right user and no data has to be copied anywhere.
+        // right user and no data has to be copied anywhere. On failure nothing
+        // changes server-side: the session stays anonymous and the data stays
+        // owned, so there is no half-upgraded state to roll back.
         if (session?.user?.is_anonymous) {
           const { error } = await supabase.auth.updateUser({ email, password });
-          return { error: error ? error.message : null };
+          if (error) {
+            // The address already belongs to a real account. Do not create or
+            // clobber anything; tell the user to log in to that account.
+            if (error.code === 'email_exists' || error.code === 'user_already_exists') {
+              return { error: 'This email already belongs to an account. Log in to it instead.' };
+            }
+            return { error: error.message };
+          }
+          // The current access token still carries is_anonymous: true, and the
+          // 0004 account-cap policy reads that claim, so without a refresh the
+          // database would keep capping this user at 1 until the next scheduled
+          // token refresh. Best-effort: if it fails, the cap task's rejected-add
+          // repair self-heals the one refused insert.
+          await supabase.auth.refreshSession().catch(() => {});
+          return { error: null };
         }
         const { error } = await supabase.auth.signUp({ email, password });
         return { error: error ? error.message : null };

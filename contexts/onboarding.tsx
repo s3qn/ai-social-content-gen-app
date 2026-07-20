@@ -35,6 +35,15 @@ type OnboardingState = {
   /** Clear the flag + answers, used by the temporary Settings dev entry so the
    *  flow can be replayed from the top. */
   reset: () => void;
+  /**
+   * Clear only the scan-run state (the @username answer, the scan step's done
+   * flag, and the stored scan result), keeping the quiz answers and the
+   * completed flag. Used when re-entering the funnel to connect ANOTHER
+   * account: without this the username input is pre-filled with the previous
+   * handle and the scan step sees itself as already done, so it skips the real
+   * fetch and every reveal keeps showing the previous account.
+   */
+  clearScan: () => void;
 };
 
 const OnboardingContext = createContext<OnboardingState | null>(null);
@@ -154,6 +163,23 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         try {
           storage()?.setItem(flagKey(uid), 'false');
           storage()?.setItem(answersKey(uid), '{}');
+          storage()?.setItem(scanKey(uid), '');
+        } catch {
+          // best-effort
+        }
+      },
+      clearScan: () => {
+        setAnswers((prev) => {
+          const { username: _username, scan: _scan, ...rest } = prev;
+          try {
+            storage()?.setItem(answersKey(uid), JSON.stringify(rest));
+          } catch {
+            // best-effort persistence; in-memory state still updates
+          }
+          return rest;
+        });
+        setScanResultState(null);
+        try {
           storage()?.setItem(scanKey(uid), '');
         } catch {
           // best-effort

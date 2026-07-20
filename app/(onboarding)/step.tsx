@@ -120,8 +120,8 @@ export default function OnboardingDriver() {
       // A first account always connects (the anonymous cap is 1). A refusal can
       // only happen when the funnel was re-entered from the account switcher
       // while already at cap, so surface the prompt and return to the app
-      // instead of pretending the account connected.
-      // TODO(login-upgrade): promptAccountCap is a stub until the login flow exists.
+      // instead of pretending the account connected. The prompt's Create
+      // account button routes to /sign-up after the back navigation settles.
       if (result === 'needs-auth' || result === 'limit') {
         promptAccountCap(result);
         complete();
