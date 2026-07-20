@@ -35,6 +35,7 @@ import { OnboardingStep, onboardingSteps } from '@/constants/onboarding-steps';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useOnboarding } from '@/contexts/onboarding';
+import { promptAccountCap } from '@/lib/account-cap-prompt';
 import { useTheme } from '@/contexts/theme';
 
 /**
@@ -113,8 +114,22 @@ export default function OnboardingDriver() {
   // drives the gate.
   const finish = () => {
     const handle = (answers.username as string | undefined) ?? '';
-    // stats.avatarUrl is nullable; the account meta wants `string | undefined`.
-    if (handle.trim()) addAccount(handle, { avatarUrl: scanResult?.stats?.avatarUrl ?? undefined });
+    if (handle.trim()) {
+      // stats.avatarUrl is nullable; the account meta wants `string | undefined`.
+      const result = addAccount(handle, { avatarUrl: scanResult?.stats?.avatarUrl ?? undefined });
+      // A first account always connects (the anonymous cap is 1). A refusal can
+      // only happen when the funnel was re-entered from the account switcher
+      // while already at cap, so surface the prompt and return to the app
+      // instead of pretending the account connected.
+      // TODO(login-upgrade): promptAccountCap is a stub until the login flow exists.
+      if (result === 'needs-auth' || result === 'limit') {
+        promptAccountCap(result);
+        complete();
+        if (router.canGoBack()) router.back();
+        else router.replace('/home');
+        return;
+      }
+    }
     complete();
     router.replace('/home');
   };

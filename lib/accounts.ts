@@ -23,6 +23,30 @@ export type ConnectedAccount = {
   isActive: boolean;
 };
 
+/**
+ * How many accounts a user may connect. Must stay in sync with the caps in
+ * supabase/migrations/0004_connected_accounts_cap.sql, where the database
+ * enforces the same numbers via a restrictive RLS policy.
+ */
+export const ACCOUNT_CAP_ANON = 1;
+export const ACCOUNT_CAP_AUTHED = 5;
+
+export function accountCap(isAnonymous: boolean): number {
+  return isAnonymous ? ACCOUNT_CAP_ANON : ACCOUNT_CAP_AUTHED;
+}
+
+/**
+ * Outcome of the remote insert.
+ * - 'ok': the row landed.
+ * - 'rejected': the database refused the row on purpose (RLS, which includes
+ *   the account cap). The caller must undo any optimistic write; retrying will
+ *   not help.
+ * - 'unavailable': Supabase could not be reached or errored for any other
+ *   reason (offline, migration not applied). Keep the optimistic write; the
+ *   background reconcile sorts it out later.
+ */
+export type AddAccountRemoteResult = 'ok' | 'rejected' | 'unavailable';
+
 type Row = {
   handle: string;
   display_name: string | null;
@@ -64,8 +88,10 @@ export async function listAccounts(userId: string): Promise<ConnectedAccount[] |
 }
 
 /**
- * Connect an account and make it the active one. Returns false if it could not
- * be persisted, so the caller can keep it locally and retry later.
+ * Connect an account and make it the active one. Distinguishes "the database
+ * said no" (the 0004 cap policy, or any RLS refusal) from "could not reach the
+ * database", because the caller reacts differently: undo the optimistic write
+ * versus keep it and retry later.
  *
  * Clearing the other rows' `is_active` first is required, not cosmetic: the
  * `connected_accounts_one_active` partial unique index rejects a second active
@@ -75,9 +101,9 @@ export async function addAccount(
   userId: string,
   rawHandle: string,
   meta: { displayName?: string; avatarUrl?: string } = {},
-): Promise<boolean> {
+): Promise<AddAccountRemoteResult> {
   const handle = normalizeHandle(rawHandle);
-  if (!handle) return false;
+  if (!handle) return 'unavailable';
 
   try {
     await supabase
@@ -96,9 +122,13 @@ export async function addAccount(
       },
       { onConflict: 'user_id,handle' },
     );
-    return !error;
+    if (!error) return 'ok';
+    // 42501 is how a WITH CHECK (RLS) refusal surfaces through PostgREST.
+    // Match on the code, never the message. Anything else (offline, table
+    // missing, 23505 if the deactivate above silently failed) is transient.
+    return error.code === '42501' ? 'rejected' : 'unavailable';
   } catch {
-    return false;
+    return 'unavailable';
   }
 }
 

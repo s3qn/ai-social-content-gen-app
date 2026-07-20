@@ -9,6 +9,7 @@ import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useAuth } from '@/contexts/auth';
 import { useTheme } from '@/contexts/theme';
+import { promptAccountCap } from '@/lib/account-cap-prompt';
 
 const AVATAR = 32;
 
@@ -24,7 +25,7 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
   const insets = useSafeAreaInsets();
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const { accounts, setActive } = useAccounts();
+  const { accounts, setActive, addBlocked } = useAccounts();
   const { isAnonymous } = useAuth();
 
   const pick = (handle: string) => {
@@ -33,6 +34,13 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
   };
 
   const addAnother = () => {
+    // Capped users never enter the funnel: an anonymous user gets 1 account
+    // and is prompted to log in for more, an authenticated user tops out at 5.
+    // TODO(login-upgrade): promptAccountCap is a stub until the login flow exists.
+    if (addBlocked) {
+      promptAccountCap(addBlocked);
+      return;
+    }
     onClose();
     // The onboarding group is guard-protected on `!hasAccounts`, which is false
     // here, so push the route explicitly rather than relying on the guard.
