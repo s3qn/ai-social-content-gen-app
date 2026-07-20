@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { CreateFab } from '@/components/create-fab';
 import { CreateOverlay } from '@/components/create-overlay';
 import { ScreenSwirl } from '@/components/screen-swirl';
+import { StattoLoader } from '@/components/statto-loader';
 import { WaitingSwirl } from '@/components/waiting-swirl';
 import { AccountsProvider, useAccounts } from '@/contexts/accounts';
 import { SessionProvider, useAuth } from '@/contexts/auth';
@@ -104,7 +105,11 @@ function ThemedRoot() {
       </SessionProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ScreenSwirl />
+      {/* Both track the same wait: the ring frames the screen edge, Statto
+          floats near the bottom. Siblings here, OUTSIDE the memoized stack, so
+          neither can re-render the navigator. */}
       <WaitingSwirl />
+      <StattoLoader />
       <CreateFab />
       <CreateOverlay />
     </NavThemeProvider>

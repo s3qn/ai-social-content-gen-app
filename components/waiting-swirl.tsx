@@ -118,6 +118,25 @@ export function endWaiting() {
 }
 
 /**
+ * Subscribe to the same refcount that drives the ring, so a second overlay can
+ * follow the wait without running a parallel counter of its own (two counters
+ * would eventually disagree about when a wait ended). Returns an unsubscribe.
+ *
+ * `components/statto-loader.tsx` is the only caller today.
+ */
+export function subscribeWaiting(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** True if a wait is already in flight, for subscribers mounting mid-wait. */
+export function isWaiting() {
+  return refCount > 0;
+}
+
+/**
  * Show the waiting glow for as long as `active` is true.
  *
  * The cleanup runs on unmount too, so abandoning a wait (navigating back
