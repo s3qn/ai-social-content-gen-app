@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, Text, TextStyle, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
+import { useAccounts } from '@/contexts/accounts';
 import { useAuth } from '@/contexts/auth';
 import { useOnboarding } from '@/contexts/onboarding';
 import { ThemeMode, useTheme } from '@/contexts/theme';
+import { clearLocalUserData, deleteOwnAccount } from '@/lib/account-delete';
 
 const MODES: { value: ThemeMode; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -22,10 +24,48 @@ const MODES: { value: ThemeMode; label: string }[] = [
  * redirects back to the welcome flow.
  */
 export default function SettingsScreen() {
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
+  const { accounts } = useAccounts();
   const { mode, palette, setMode } = useTheme();
   const { reset: resetOnboarding } = useOnboarding();
   const styles = useMemo(() => makeStyles(palette), [palette]);
+
+  // Permanent, and the confirm says so. The RPC deletes the auth user, which
+  // cascades every row they own; the local mirrors have to be cleared by hand or
+  // a deleted user's accounts and peers come back on the next launch. Clear them
+  // BEFORE signing out, while the handles are still in memory.
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your connected accounts, tracked peers, saved scans and onboarding answers. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              const uid = session?.user?.id ?? null;
+              const handles = accounts.map((a) => a.handle);
+              const result = await deleteOwnAccount();
+              if (result !== 'ok') {
+                Alert.alert(
+                  'Could not delete the account',
+                  'The server refused the request, so nothing was deleted. Check that migration 0007 has been applied, then try again.',
+                );
+                return;
+              }
+              if (uid) clearLocalUserData(uid, handles);
+              // The user no longer exists, so sign-out can legitimately fail.
+              // Either way the session is dropped locally and the guard sends
+              // us back to welcome.
+              await signOut();
+            })();
+          },
+        },
+      ],
+    );
+  };
 
   // Dev/utility entry. The router gate (app/_layout.tsx) is live as of F6, so
   // clearing the flag is enough: the guard flips back to the onboarding group.
@@ -82,6 +122,25 @@ export default function SettingsScreen() {
       </View>
 
       <BlackButton label="Log out" onPress={() => signOut()} />
+
+      {/* Destructive and irreversible, so it sits apart from Log out, is styled
+          as a warning rather than a button, and confirms before doing anything. */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Danger zone</Text>
+        <HapticPressable
+          accessibilityRole="button"
+          onPress={confirmDelete}
+          style={({ pressed }) => [styles.devRow, pressed && styles.devRowPressed]}>
+          <Ionicons name="trash-outline" size={20} color={palette.warn} />
+          <View style={styles.devRowText}>
+            <Text style={[styles.devRowTitle, styles.dangerTitle]}>Delete account</Text>
+            <Text style={styles.devRowSub}>
+              Permanently removes your accounts, peers, scans and answers
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={palette.muted} />
+        </HapticPressable>
+      </View>
     </View>
   );
 }
@@ -131,6 +190,9 @@ const makeStyles = (palette: AppPalette) =>
     },
     segmentTextActive: {
       color: palette.surface,
+    },
+    dangerTitle: {
+      color: palette.warn,
     },
     devRow: {
       flexDirection: 'row',

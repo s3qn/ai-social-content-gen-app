@@ -5,12 +5,13 @@ import { Image, Modal, Pressable, StyleSheet, Text, TextStyle, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticPressable } from '@/components/haptic-pressable';
+import { SwipeRow } from '@/components/swipe-row';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useAuth } from '@/contexts/auth';
 import { useOnboarding } from '@/contexts/onboarding';
 import { useTheme } from '@/contexts/theme';
-import { promptAccountCap } from '@/lib/account-cap-prompt';
+import { promptCap } from '@/lib/cap-prompt';
 
 const AVATAR = 32;
 
@@ -26,7 +27,7 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
   const insets = useSafeAreaInsets();
   const { palette } = useTheme();
   const styles = useMemo(() => makeStyles(palette), [palette]);
-  const { accounts, setActive, addBlocked } = useAccounts();
+  const { accounts, setActive, addBlocked, removeAccount } = useAccounts();
   const { isAnonymous } = useAuth();
   const { clearScan } = useOnboarding();
 
@@ -42,7 +43,7 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
     // to /sign-up, and a push under this open Modal would land behind it.
     if (addBlocked) {
       onClose();
-      promptAccountCap(addBlocked);
+      promptCap('account', addBlocked);
       return;
     }
     onClose();
@@ -63,33 +64,43 @@ export function AccountSwitcher({ visible, onClose }: { visible: boolean; onClos
         <Text style={styles.title}>Accounts</Text>
 
         {accounts.map((a) => (
-          <HapticPressable
+          <SwipeRow
             key={a.handle}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-            onPress={() => pick(a.handle)}>
-            {a.avatarUrl ? (
-              <Image source={{ uri: a.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarInitial}>
-                  {(a.displayName ?? a.handle).slice(0, 1).toUpperCase()}
+            // Owning at least one connected account is what grants access to the
+            // app (the hasAccounts router guard), so deleting the last one would
+            // eject the user into onboarding. Rather than warn about that, make
+            // it impossible: the final account has no grip and does not swipe.
+            disabled={accounts.length === 1}
+            onDelete={() => removeAccount(a.handle)}
+            confirmTitle={`Disconnect @${a.handle}?`}
+            confirmMessage="This removes the account and the peers you tracked under it. You can reconnect it by scanning again.">
+            <HapticPressable
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+              onPress={() => pick(a.handle)}>
+              {a.avatarUrl ? (
+                <Image source={{ uri: a.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Text style={styles.avatarInitial}>
+                    {(a.displayName ?? a.handle).slice(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.handle} numberOfLines={1}>
+                  @{a.handle}
                 </Text>
+                {a.displayName ? (
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    {a.displayName}
+                  </Text>
+                ) : null}
               </View>
-            )}
-            <View style={styles.rowText}>
-              <Text style={styles.handle} numberOfLines={1}>
-                @{a.handle}
-              </Text>
-              {a.displayName ? (
-                <Text style={styles.subtitle} numberOfLines={1}>
-                  {a.displayName}
-                </Text>
+              {a.isActive ? (
+                <Ionicons name="checkmark-circle" size={22} color={palette.accent} />
               ) : null}
-            </View>
-            {a.isActive ? (
-              <Ionicons name="checkmark-circle" size={22} color={palette.accent} />
-            ) : null}
-          </HapticPressable>
+            </HapticPressable>
+          </SwipeRow>
         ))}
 
         <HapticPressable

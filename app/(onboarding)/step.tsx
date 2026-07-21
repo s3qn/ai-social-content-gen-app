@@ -35,7 +35,7 @@ import { OnboardingStep, onboardingSteps } from '@/constants/onboarding-steps';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useOnboarding } from '@/contexts/onboarding';
-import { promptAccountCap } from '@/lib/account-cap-prompt';
+import { promptCap } from '@/lib/cap-prompt';
 import { useTheme } from '@/contexts/theme';
 
 /**
@@ -123,7 +123,7 @@ export default function OnboardingDriver() {
       // instead of pretending the account connected. The prompt's Create
       // account button routes to /sign-up after the back navigation settles.
       if (result === 'needs-auth' || result === 'limit') {
-        promptAccountCap(result);
+        promptCap('account', result);
         complete();
         if (router.canGoBack()) router.back();
         else router.replace('/home');

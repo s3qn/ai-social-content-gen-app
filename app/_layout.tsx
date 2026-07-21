@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@rea
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { memo } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { CreateFab } from '@/components/create-fab';
@@ -12,6 +13,7 @@ import { WaitingSwirl } from '@/components/waiting-swirl';
 import { AccountsProvider, useAccounts } from '@/contexts/accounts';
 import { SessionProvider, useAuth } from '@/contexts/auth';
 import { OnboardingProvider } from '@/contexts/onboarding';
+import { PeersProvider } from '@/contexts/peers';
 import { ThemeProvider, useTheme } from '@/contexts/theme';
 
 export const unstable_settings = {
@@ -109,7 +111,12 @@ function ThemedRoot() {
             outside the navigator. */}
         <AccountsProvider>
           <OnboardingProvider>
-            <RootNavigator />
+            {/* Peers reads the session for its per-user namespace but feeds no
+                router guard, so it nests innermost and the navigator memo above
+                stays keyed on the same primitives. */}
+            <PeersProvider>
+              <RootNavigator />
+            </PeersProvider>
           </OnboardingProvider>
         </AccountsProvider>
       </SessionProvider>
@@ -128,8 +135,14 @@ function ThemedRoot() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <ThemedRoot />
-    </ThemeProvider>
+    // Required by react-native-gesture-handler: without this root the swipe
+    // rows in the account switcher and peers list silently do nothing. It is a
+    // plain flex:1 view and sits OUTSIDE the memoized navigator, so it does not
+    // participate in the guard timing the tab bar depends on.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <ThemedRoot />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

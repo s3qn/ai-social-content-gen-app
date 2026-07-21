@@ -3,8 +3,8 @@
  * Ids just key the placeholder card lists; swap for real data later.
  */
 
-export const PEERS = ['p1', 'p2', 'p3'];
-export const NEW_POSTS = ['n1', 'n2'];
+// The Peers tab runs on real data now (contexts/peers.tsx), so its placeholder
+// ids are gone.
 
 export const IDEAS = ['i1', 'i2', 'i3'];
 export const BRAINSTORMS = ['b1', 'b2'];
