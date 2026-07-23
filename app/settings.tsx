@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Alert, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlackButton } from '@/components/black-button';
 import { HapticPressable } from '@/components/haptic-pressable';
@@ -28,6 +29,7 @@ export default function SettingsScreen() {
   const { accounts } = useAccounts();
   const { mode, palette, setMode } = useTheme();
   const { reset: resetOnboarding } = useOnboarding();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(palette), [palette]);
 
   // Permanent, and the confirm says so. The RPC deletes the auth user, which
@@ -78,9 +80,25 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Appearance</Text>
+    <View style={styles.root}>
+      {/* JS header, not the native stack header: a native back button freezes
+          after an in-screen theme toggle (the nav bar re-syncs on recolor).
+          router.back() on a Pressable is immune to that. */}
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+        <HapticPressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={10}
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.back, pressed && styles.backPressed]}>
+          <Ionicons name="chevron-back" size={26} color={palette.ink} />
+        </HapticPressable>
+        <Text style={styles.headerTitle}>Settings</Text>
+      </View>
+
+      <View style={styles.container}>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Appearance</Text>
         <View style={styles.segment}>
           {MODES.map((m) => {
             const selected = mode === m.value;
@@ -141,12 +159,37 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={18} color={palette.muted} />
         </HapticPressable>
       </View>
+      </View>
     </View>
   );
 }
 
 const makeStyles = (palette: AppPalette) =>
   StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: palette.bg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: Spacing.md,
+    },
+    back: {
+      padding: Spacing.xs,
+      marginLeft: -Spacing.xs,
+    },
+    backPressed: {
+      opacity: 0.5,
+    },
+    headerTitle: {
+      ...(Type.body as TextStyle),
+      fontSize: 18,
+      fontWeight: '700',
+      color: palette.ink,
+    },
     container: {
       flex: 1,
       backgroundColor: palette.bg,

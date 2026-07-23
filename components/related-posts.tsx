@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import * as Linking from 'expo-linking';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,46 +14,29 @@ import {
 
 import { CopyStrategyButton } from '@/components/copy-strategy-button';
 import { HapticPressable } from '@/components/haptic-pressable';
-import { PostAnalysisModal } from '@/components/post-analysis-modal';
 import { SkeletonBlock, useSkeletonSweep } from '@/components/skeleton';
-import { SectionHeading } from '@/components/themed-screen';
-import { useViewMode, ViewToggle } from '@/components/view-toggle';
+import { useViewMode } from '@/components/view-toggle';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
 import { formatCompact } from '@/lib/format';
-import {
-  biggest,
-  EMPTY_BATCH,
-  fetchTrending,
-  isStale,
-  requestRefresh,
-  rising,
-  type TrendingBatch,
-  type TrendingPost,
-} from '@/lib/trending';
+import { fetchRelated, readCachedRelated, type RelatedPost } from '@/lib/related';
 
 /**
- * What is trending on Instagram right now, as two lists over ONE shared scrape.
+ * Posts from the user's own niche, rendered under the RELATED TO YOU heading on
+ * the Trends tab. Unlike the trending panel above it, this list IS personal: it
+ * asks the scan service for the caller's niche/subtopic and the service caches
+ * the answer 6h per niche, so the call stays cheap even so.
  *
- *   Biggest  raw engagement. Skews to mega-accounts, by design.
- *   Rising   engagement per hour since posting, over posts that cleared the
- *            backend's age and engagement floors.
+ * The grid/rows preference is read from the SAME storage key as the trending
+ * panel ('trending-view-mode') on purpose, with no toggle button of its own, so
+ * one flip up there keeps the whole page consistent.
  *
- * This panel only ever READS the global cache. It never scrapes: trending is
- * identical for every user, so one scheduled scrape serves everybody, and a
- * per-user or per-open scrape would multiply Apify credits by the user count for
- * the same data. When the cached batch is past its window the panel says so to
- * the scan service and carries on rendering what it already has.
- *
- * All state is local to this component. It reads no context beyond the theme and
- * touches no provider, so it cannot re-render the root navigator or disturb the
- * native tab bar's guard timing.
+ * Row and tile layouts mirror trending-panel.tsx but are written here rather
+ * than imported: the two panels evolve independently and neither should be able
+ * to reshape the other.
  */
 
-type Tab = 'biggest' | 'rising';
-
 const THUMB = 56;
-const ROW_LIMIT = 20;
 const CAPTION_LINES = 2;
 
 function relativeAge(hours: number): string {
@@ -70,14 +53,14 @@ function captionSnippet(caption: string): string {
 
 function Row({
   post,
+  onPress,
   styles,
   palette,
-  onOpenPost,
 }: {
-  post: TrendingPost;
+  post: RelatedPost;
+  onPress: (post: RelatedPost) => void;
   styles: Styles;
   palette: AppPalette;
-  onOpenPost: (post: TrendingPost) => void;
 }) {
   // Instagram thumbnails are signed CDN links that expire in days. A dead image
   // must still leave a tappable row behind, so track failure instead of hiding.
@@ -87,9 +70,9 @@ function Row({
 
   return (
     <HapticPressable
-      accessibilityRole="button"
-      accessibilityLabel={`Analyze @${post.ownerUsername ?? 'this post'}'s post`}
-      onPress={() => onOpenPost(post)}
+      accessibilityRole="link"
+      accessibilityLabel={`Open @${post.ownerUsername ?? 'this post'} on Instagram`}
+      onPress={() => onPress(post)}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
       <View style={styles.thumb}>
         {showImage ? (
@@ -141,20 +124,19 @@ function Row({
 }
 
 /**
- * One post as a big rectangle tile for the grid view, styled like the
- * onboarding DNA reveal's top-post tiles: cover image, bottom scrim with the
- * handle and stats overlaid, age in a small dark pill top-right.
+ * One post as a big 4:5 rectangle tile for the grid view: cover image, bottom
+ * scrim with the handle and stats overlaid, age in a small dark pill top-right.
  */
 function Tile({
   post,
+  onPress,
   styles,
   palette,
-  onOpenPost,
 }: {
-  post: TrendingPost;
+  post: RelatedPost;
+  onPress: (post: RelatedPost) => void;
   styles: Styles;
   palette: AppPalette;
-  onOpenPost: (post: TrendingPost) => void;
 }) {
   const [broken, setBroken] = useState(false);
   const uri = post.thumbnailUrl;
@@ -163,9 +145,9 @@ function Tile({
 
   return (
     <HapticPressable
-      accessibilityRole="button"
-      accessibilityLabel={`Analyze @${post.ownerUsername ?? 'this post'}'s post`}
-      onPress={() => onOpenPost(post)}
+      accessibilityRole="link"
+      accessibilityLabel={`Open @${post.ownerUsername ?? 'this post'} on Instagram`}
+      onPress={() => onPress(post)}
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}>
       {showImage ? (
         <Image
@@ -187,9 +169,7 @@ function Tile({
         </View>
       ) : null}
 
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.78)']}
-        style={styles.scrim}>
+      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.78)']} style={styles.scrim}>
         <Text style={styles.tileHandle} numberOfLines={1}>
           @{post.ownerUsername ?? 'unknown'}
         </Text>
@@ -208,12 +188,8 @@ function Tile({
   );
 }
 
-/**
- * Loading state for the trends list: rows shaped like `Row` (56pt thumb, two
- * text lines, a stat bar) so the real rows land in place, same pattern as the
- * peers skeleton.
- */
-function TrendingRowSkeleton({ count, styles }: { count: number; styles: Styles }) {
+/** Loading state shaped like `Row` so the real rows land in place. */
+function RelatedRowSkeleton({ count, styles }: { count: number; styles: Styles }) {
   'use no memo';
   const progress = useSkeletonSweep();
 
@@ -221,7 +197,7 @@ function TrendingRowSkeleton({ count, styles }: { count: number; styles: Styles 
     <View
       style={styles.list}
       accessible
-      accessibilityLabel="Loading trends"
+      accessibilityLabel="Loading related posts"
       accessibilityRole="progressbar">
       {Array.from({ length: count }, (_, i) => (
         <View
@@ -242,7 +218,7 @@ function TrendingRowSkeleton({ count, styles }: { count: number; styles: Styles 
 }
 
 /** Grid-mode loading state: tile-shaped blocks in the same horizontal rail. */
-function TrendingTileSkeleton({ count, styles }: { count: number; styles: Styles }) {
+function RelatedTileSkeleton({ count, styles }: { count: number; styles: Styles }) {
   'use no memo';
   const progress = useSkeletonSweep();
 
@@ -250,142 +226,106 @@ function TrendingTileSkeleton({ count, styles }: { count: number; styles: Styles
     <View
       style={styles.rail}
       accessible
-      accessibilityLabel="Loading trends"
+      accessibilityLabel="Loading related posts"
       accessibilityRole="progressbar">
       {Array.from({ length: count }, (_, i) => (
-        <SkeletonBlock
-          key={i}
-          progress={progress}
-          style={styles.tileSkeleton}
-        />
+        <SkeletonBlock key={i} progress={progress} style={styles.tileSkeleton} />
       ))}
     </View>
   );
 }
 
-export function TrendingPanel() {
+export function RelatedPosts({
+  niche,
+  subtopic,
+  onOpenPost,
+}: {
+  niche: string | null;
+  subtopic: string | null;
+  onOpenPost?: (post: RelatedPost) => void;
+}) {
   const { palette } = useTheme();
-  // Explicit pixel tile size, like the onboarding top-posts rail: the tiles'
-  // children are all absolutely positioned, and percentage width + aspectRatio
-  // inside a wrap row lays out at height 0 here, which blanked the whole grid.
-  // 2.2 per screen so a partial third tile advertises the sideways scroll.
+  // Explicit pixel tile size: the tiles' children are all absolutely
+  // positioned, and percentage width + aspectRatio inside a wrap row lays out
+  // at height 0 here, which blanks the whole grid. 2.2 per screen so a partial
+  // third tile advertises the sideways scroll.
   const { width: screenW } = useWindowDimensions();
   const tileW = Math.floor((screenW - Spacing.xl * 2 - Spacing.sm) / 2.2);
   const tileH = Math.round(tileW * 1.25);
-  const styles = useMemo(
-    () => makeStyles(palette, tileW, tileH),
-    [palette, tileW, tileH],
-  );
+  const styles = useMemo(() => makeStyles(palette, tileW, tileH), [palette, tileW, tileH]);
 
-  const [batch, setBatch] = useState<TrendingBatch>(EMPTY_BATCH);
+  const [posts, setPosts] = useState<RelatedPost[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [tab, setTab] = useState<Tab>('biggest');
-  const [openPost, setOpenPost] = useState<TrendingPost | null>(null);
-  const mounted = useRef(true);
 
-  // Re-read the cache every time the tab gains focus, not just on mount. That is
-  // one cheap select, and it is how a batch written by a refresh we kicked off
-  // earlier actually reaches the screen.
-  useFocusEffect(
-    useCallback(() => {
-      mounted.current = true;
+  // Same storage key as the trending panel on purpose: one preference for the
+  // whole page. The toggle button lives up there, not here.
+  const [mode] = useViewMode('trending-view-mode');
 
-      void (async () => {
-        const next = await fetchTrending();
-        if (!mounted.current) return;
-        setBatch(next);
-        setLoaded(true);
-        // Ask the service to refresh, but keep showing what we have. The service
-        // re-checks the age itself and collapses concurrent asks into one run.
-        if (isStale(next.fetchedAt)) requestRefresh();
-      })();
+  useEffect(() => {
+    let mounted = true;
 
-      return () => {
-        mounted.current = false;
-      };
-    }, []),
-  );
+    const cached = readCachedRelated(niche, subtopic);
+    if (cached) {
+      setPosts(cached);
+      setLoaded(true);
+      return;
+    }
 
-  const [mode, toggleMode] = useViewMode('trending-view-mode');
+    setPosts([]);
+    setLoaded(false);
+    void (async () => {
+      const next = await fetchRelated(niche, subtopic);
+      if (!mounted) return;
+      setPosts(next);
+      setLoaded(true);
+    })();
 
-  const rows = useMemo(
-    () => (tab === 'biggest' ? biggest(batch.posts, ROW_LIMIT) : rising(batch.posts, ROW_LIMIT)),
-    [tab, batch.posts],
-  );
+    return () => {
+      mounted = false;
+    };
+  }, [niche, subtopic]);
 
-  return (
-    <>
-      <View style={styles.headingRow}>
-        <SectionHeading>GLOBAL TRENDS</SectionHeading>
-        <ViewToggle mode={mode} onToggle={toggleMode} label="trends" />
+  const open = (post: RelatedPost) => {
+    if (onOpenPost) onOpenPost(post);
+    else void Linking.openURL(post.url).catch(() => {});
+  };
+
+  if (!loaded) {
+    return mode === 'grid' ? (
+      <RelatedTileSkeleton count={4} styles={styles} />
+    ) : (
+      <RelatedRowSkeleton count={3} styles={styles} />
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyText}>Nothing related right now. Check back later.</Text>
       </View>
+    );
+  }
 
-      <View style={styles.tabs}>
-        {(['biggest', 'rising'] as const).map((key) => (
-          <HapticPressable
-            key={key}
-            accessibilityRole="button"
-            accessibilityState={{ selected: tab === key }}
-            onPress={() => setTab(key)}
-            style={[styles.tab, tab === key && styles.tabActive]}>
-            <Text style={[styles.tabLabel, tab === key && styles.tabLabelActive]}>
-              {key === 'biggest' ? 'Biggest' : 'Rising'}
-            </Text>
-          </HapticPressable>
-        ))}
-      </View>
-
-      {!loaded ? (
-        mode === 'grid' ? (
-          <TrendingTileSkeleton count={4} styles={styles} />
-        ) : (
-          <TrendingRowSkeleton count={3} styles={styles} />
-        )
-      ) : rows.length ? (
-        mode === 'grid' ? (
-          // ONE row, scrolled sideways: the grid must not push the sections
-          // below it off screen now that a batch holds 10-20 posts.
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.rail}>
-            {rows.map((post) => (
-              <View key={post.shortCode} style={styles.railCell}>
-                <Tile
-                  post={post}
-                  styles={styles}
-                  palette={palette}
-                  onOpenPost={setOpenPost}
-                />
-                <CopyStrategyButton />
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.list}>
-            {rows.map((post) => (
-              <Row
-                key={post.shortCode}
-                post={post}
-                styles={styles}
-                palette={palette}
-                onOpenPost={setOpenPost}
-              />
-            ))}
-          </View>
-        )
-      ) : (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            {tab === 'rising'
-              ? 'Nothing is taking off right now. Check back after the next refresh.'
-              : 'No trends yet. The first scan is running, check back shortly.'}
-          </Text>
+  return mode === 'grid' ? (
+    // ONE row, scrolled sideways, so this section stays reachable without deep
+    // vertical scrolling past the trending grid above it.
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.rail}>
+      {posts.map((post) => (
+        <View key={post.shortCode} style={styles.railCell}>
+          <Tile post={post} onPress={open} styles={styles} palette={palette} />
+          <CopyStrategyButton />
         </View>
-      )}
-
-      <PostAnalysisModal post={openPost} onClose={() => setOpenPost(null)} />
-    </>
+      ))}
+    </ScrollView>
+  ) : (
+    <View style={styles.list}>
+      {posts.map((post) => (
+        <Row key={post.shortCode} post={post} onPress={open} styles={styles} palette={palette} />
+      ))}
+    </View>
   );
 }
 
@@ -393,11 +333,6 @@ type Styles = ReturnType<typeof makeStyles>;
 
 const makeStyles = (palette: AppPalette, tileW: number, tileH: number) =>
   StyleSheet.create({
-    headingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
     rail: {
       flexDirection: 'row',
       gap: Spacing.sm,
@@ -405,8 +340,8 @@ const makeStyles = (palette: AppPalette, tileW: number, tileH: number) =>
     railCell: {
       gap: Spacing.xs,
     },
-    // 4:5 portrait rectangles like the onboarding DNA top-post tiles, sized in
-    // pixels from the window width so two columns fill the content width.
+    // 4:5 portrait rectangles sized in pixels from the window width so two
+    // columns fill the content width.
     tile: {
       width: tileW,
       height: tileH,
@@ -468,29 +403,6 @@ const makeStyles = (palette: AppPalette, tileW: number, tileH: number) =>
       height: tileH,
       borderRadius: Radius.lg,
     },
-    tabs: {
-      flexDirection: 'row',
-      gap: Spacing.xs,
-      backgroundColor: palette.surface,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.line,
-      borderRadius: Radius.pill,
-      padding: 3,
-      marginBottom: Spacing.md,
-    },
-    tab: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: Spacing.sm,
-      borderRadius: Radius.pill,
-    },
-    tabActive: { backgroundColor: palette.accent },
-    tabLabel: {
-      ...(Type.body as TextStyle),
-      fontWeight: '700',
-      color: palette.muted,
-    },
-    tabLabelActive: { color: palette.surface },
     list: { gap: Spacing.sm },
     row: {
       flexDirection: 'row',

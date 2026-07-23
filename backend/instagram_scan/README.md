@@ -1,8 +1,25 @@
-# Instagram Scan Service (P1: Apify only)
+# Instagram Scan Service
 
-Backend proxy for the onboarding funnel's real Instagram scan. Holds the Apify
-key server-side, exposes a single Bearer-gated endpoint, and returns real
+Backend proxy for the onboarding funnel's real Instagram scan. Holds the
+scraper keys server-side, exposes Bearer-gated endpoints, and returns real
 profile stats + deterministic post-type / engagement analysis.
+
+## Scrape provider toggle
+
+Scraping routes through `provider.py`. `SCRAPER_PROVIDER=apify` selects the
+original `apify/instagram-scraper` actor; anything else (including unset)
+selects ScrapeCreators (`scrapecreators.py`, flat 1 credit per HTTP request).
+Trending also switches source: ScrapeCreators uses the dedicated trending-reels
+endpoint (1 credit per refresh), Apify scrapes 10 hashtag explore pages.
+Every ScrapeCreators call logs latency and `credits_remaining`, and each scan
+prints a `[scan] provider=... credits_used=... total_elapsed=...` summary line,
+so the two providers can be compared on speed, reliability and spend.
+
+Peer suggestions on ScrapeCreators are search-first: 1-2 profile-search
+requests (`/v1/instagram/search/profiles`, keyword = the classified subtopic)
+find real accounts with follower counts inline, and one Claude call writes the
+card blurbs. The older model-suggestion + verification path remains as the
+fallback and as the Apify path.
 
 **P1 scope:** Apify fetch + deterministic analysis only. No Claude/Anthropic
 call yet: `dna` and `score` are always `null` (F3 fills them in via the
@@ -41,7 +58,8 @@ Typed errors (never a stack trace): `{"error": "<code>", "detail": "..."}`
 - `400 bad_handle`: empty / too long / illegal characters.
 - `401 unauthorized`: missing or wrong Bearer token.
 - `404 not_found` / `404 private`: profile missing or private.
-- `502 apify_error`: upstream Apify failure.
+- `502 apify_error`: upstream scrape failure on whichever provider is active
+  (the code name is kept for client compatibility).
 
 ## Setup & run
 
@@ -49,11 +67,13 @@ Typed errors (never a stack trace): `{"error": "<code>", "detail": "..."}`
 cd backend/instagram_scan
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env   # then fill APIFY_API_KEY + SCAN_TOKEN
+cp .env.example .env   # then fill SCRAPECREATORS_API_KEY (or APIFY_API_KEY) + SCAN_TOKEN
 ./run.sh               # serves 127.0.0.1:8010 only
 ```
 
 The Apify actor run takes ~30–90s per scan; allow ~150s client timeout.
+ScrapeCreators requests usually answer in seconds each; the summary log line
+per scan is the authoritative comparison.
 
 ## Security
 

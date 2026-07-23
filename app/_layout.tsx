@@ -67,7 +67,12 @@ const AuthedStack = memo(function AuthedStack({
 
       <Stack.Protected guard={hasSession && hasAccounts}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        {/* headerShown:false + a JS header inside settings.tsx. The native
+            header's back button froze after an in-screen theme toggle: recoloring
+            the native nav bar (NavThemeProvider value flips on scheme change)
+            re-syncs it and drops the back button's tap target. A React header
+            with router.back() can't be frozen by that native re-sync. */}
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Routable when signed out (welcome/log in) AND while anonymous: the

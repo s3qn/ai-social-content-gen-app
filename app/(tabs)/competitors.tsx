@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TextStyle, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextStyle,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { AccountSwitcher } from '@/components/account-switcher';
 import { AddPeerInput } from '@/components/add-peer-input';
@@ -7,10 +14,13 @@ import { InstagramPill } from '@/components/instagram-pill';
 import { PeerCard } from '@/components/peer-card';
 import { PeerCardSkeleton } from '@/components/peer-card-skeleton';
 import { PeerDetail } from '@/components/peer-detail';
+import { PeerTile } from '@/components/peer-tile';
+import { SkeletonBlock, useSkeletonSweep } from '@/components/skeleton';
 import { SwipeRow } from '@/components/swipe-row';
 import { SectionHeading, SettingsGear, ThemedScreen } from '@/components/themed-screen';
+import { useViewMode, ViewToggle } from '@/components/view-toggle';
 import { charactersFor } from '@/constants/characters';
-import { AppPalette, Type } from '@/constants/theme';
+import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useAccounts } from '@/contexts/accounts';
 import { useAuth } from '@/contexts/auth';
 import { useOnboarding } from '@/contexts/onboarding';
@@ -47,9 +57,37 @@ import {
  * Tracking costs nothing. Only opening a tracked peer can scrape, at most once
  * per 24h per handle, shared by everyone tracking them.
  */
+/** Grid-mode loading state: tile-shaped blocks in the same horizontal rail. */
+function PeerTileSkeleton({
+  count,
+  styles,
+}: {
+  count: number;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  'use no memo';
+  const progress = useSkeletonSweep();
+
+  return (
+    <View
+      style={styles.rail}
+      accessible
+      accessibilityLabel="Loading peers"
+      accessibilityRole="progressbar">
+      {Array.from({ length: count }, (_, i) => (
+        <SkeletonBlock key={i} progress={progress} style={styles.tileSkeleton} />
+      ))}
+    </View>
+  );
+}
+
 export default function CompetitorsScreen() {
   const { scheme, palette } = useTheme();
-  const styles = useMemo(() => makeStyles(palette), [palette]);
+  // Fixed pixel cell width for the sideways peer rails, 2.2 per screen so a
+  // partial third tile advertises the scroll (same math as the post rails).
+  const { width: screenW } = useWindowDimensions();
+  const cellW = Math.floor((screenW - Spacing.xl * 2 - Spacing.sm) / 2.2);
+  const styles = useMemo(() => makeStyles(palette, cellW), [palette, cellW]);
   const theme = charactersFor(scheme).statto;
   const { peers, addPeer, addBlocked, removePeer } = usePeers();
   const { activeAccount } = useAccounts();
@@ -70,6 +108,9 @@ export default function CompetitorsScreen() {
   const [broadened, setBroadened] = useState(false);
   const [open, setOpen] = useState<TrackedPeer | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  // One grid/rows mode for the whole screen; the toggle sits on the first
+  // rendered section heading.
+  const [viewMode, toggleViewMode] = useViewMode('peers-view-mode');
 
   const uid = session?.user?.id ?? null;
   const accountHandle = activeAccount?.handle ?? null;
@@ -235,33 +276,67 @@ export default function CompetitorsScreen() {
       }>
       {peers.length > 0 ? (
         <>
-          <SectionHeading>MY PEERS</SectionHeading>
-          {peers.map((p) => (
-            <SwipeRow
-              key={p.handle}
-              onDelete={() => removePeer(p.handle)}
-              confirmTitle={`Stop tracking @${p.handle}?`}
-              confirmMessage={`This removes them from ${
-                activeAccount ? `@${activeAccount.handle}` : 'this account'
-              } only. You can track them again from the suggestions.`}>
-              <PeerCard
-                handle={p.handle}
-                displayName={p.displayName}
-                avatarUrl={p.avatarUrl}
-                followerCount={p.followerCount}
-                action="open"
-                onPress={() => setOpen(p)}
-              />
-            </SwipeRow>
-          ))}
+          <View style={styles.headingRow}>
+            <SectionHeading>MY PEERS</SectionHeading>
+            <ViewToggle mode={viewMode} onToggle={toggleViewMode} label="peers" />
+          </View>
+          {viewMode === 'grid' ? (
+            // ONE sideways row. Untracking has no swipe in the grid on
+            // purpose: opening a tile reaches PeerDetail's "Stop tracking".
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.rail}>
+              {peers.map((p) => (
+                <View key={p.handle} style={styles.gridCell}>
+                  <PeerTile
+                    handle={p.handle}
+                    displayName={p.displayName}
+                    avatarUrl={p.avatarUrl}
+                    followerCount={p.followerCount}
+                    action="open"
+                    onPress={() => setOpen(p)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            peers.map((p) => (
+              <SwipeRow
+                key={p.handle}
+                onDelete={() => removePeer(p.handle)}
+                confirmTitle={`Stop tracking @${p.handle}?`}
+                confirmMessage={`This removes them from ${
+                  activeAccount ? `@${activeAccount.handle}` : 'this account'
+                } only. You can track them again from the suggestions.`}>
+                <PeerCard
+                  handle={p.handle}
+                  displayName={p.displayName}
+                  avatarUrl={p.avatarUrl}
+                  followerCount={p.followerCount}
+                  action="open"
+                  onPress={() => setOpen(p)}
+                />
+              </SwipeRow>
+            ))
+          )}
         </>
       ) : null}
 
       {loading ? (
         <>
-          <SectionHeading>SUGGESTED FOR YOU</SectionHeading>
+          <View style={styles.headingRow}>
+            <SectionHeading>SUGGESTED FOR YOU</SectionHeading>
+            {peers.length === 0 ? (
+              <ViewToggle mode={viewMode} onToggle={toggleViewMode} label="peers" />
+            ) : null}
+          </View>
           <Text style={styles.muted}>Finding creators worth studying…</Text>
-          <PeerCardSkeleton count={3} />
+          {viewMode === 'grid' ? (
+            <PeerTileSkeleton count={4} styles={styles} />
+          ) : (
+            <PeerCardSkeleton count={3} />
+          )}
         </>
       ) : null}
 
@@ -280,7 +355,12 @@ export default function CompetitorsScreen() {
 
       {untracked.length > 0 ? (
         <>
-          <SectionHeading>SUGGESTED FOR YOU</SectionHeading>
+          <View style={styles.headingRow}>
+            <SectionHeading>SUGGESTED FOR YOU</SectionHeading>
+            {peers.length === 0 ? (
+              <ViewToggle mode={viewMode} onToggle={toggleViewMode} label="peers" />
+            ) : null}
+          </View>
           {resolved ? (
             <Text style={styles.muted}>
               {broadened
@@ -290,18 +370,39 @@ export default function CompetitorsScreen() {
                   : resolved.niche}
             </Text>
           ) : null}
-          {untracked.map((s) => (
-            <PeerCard
-              key={s.handle}
-              handle={s.handle}
-              displayName={s.displayName}
-              avatarUrl={s.avatarUrl}
-              followerCount={s.followerCount}
-              why={s.why}
-              action="track"
-              onPress={() => track(s)}
-            />
-          ))}
+          {viewMode === 'grid' ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.rail}>
+              {untracked.map((s) => (
+                <View key={s.handle} style={styles.gridCell}>
+                  <PeerTile
+                    handle={s.handle}
+                    displayName={s.displayName}
+                    avatarUrl={s.avatarUrl}
+                    followerCount={s.followerCount}
+                    why={s.why}
+                    action="track"
+                    onPress={() => track(s)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            untracked.map((s) => (
+              <PeerCard
+                key={s.handle}
+                handle={s.handle}
+                displayName={s.displayName}
+                avatarUrl={s.avatarUrl}
+                followerCount={s.followerCount}
+                why={s.why}
+                action="track"
+                onPress={() => track(s)}
+              />
+            ))
+          )}
         </>
       ) : null}
 
@@ -333,7 +434,7 @@ export default function CompetitorsScreen() {
   );
 }
 
-const makeStyles = (palette: AppPalette) =>
+const makeStyles = (palette: AppPalette, cellW: number) =>
   StyleSheet.create({
     muted: {
       ...(Type.body as TextStyle),
@@ -344,5 +445,22 @@ const makeStyles = (palette: AppPalette) =>
       ...(Type.body as TextStyle),
       color: palette.warn,
       fontSize: 13,
+    },
+    headingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    rail: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    gridCell: {
+      width: cellW,
+    },
+    tileSkeleton: {
+      width: cellW,
+      height: 170,
+      borderRadius: Radius.lg,
     },
   });

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatCount } from '@/components/peer-card';
 import { HapticPressable } from '@/components/haptic-pressable';
+import { SkeletonBlock, useSkeletonSweep } from '@/components/skeleton';
 import { AppPalette, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
 import { peerScanCached } from '@/lib/peer-scan-cache';
@@ -141,10 +141,7 @@ export function PeerDetail({
               We could not refresh this profile right now. Try again in a moment.
             </Text>
           ) : (
-            <View style={styles.loading}>
-              <ActivityIndicator color={palette.muted} />
-              <Text style={styles.muted}>Pulling their latest numbers…</Text>
-            </View>
+            <ScanSkeleton styles={styles} />
           )}
         </ScrollView>
 
@@ -158,6 +155,34 @@ export function PeerDetail({
         </HapticPressable>
       </View>
     </Modal>
+  );
+}
+
+/**
+ * Loading state for a peer scan: blocks shaped like the stats row and the two
+ * text blocks below it, so the sheet keeps its height when the numbers land.
+ */
+function ScanSkeleton({ styles }: { styles: ReturnType<typeof makeStyles> }) {
+  'use no memo';
+  const progress = useSkeletonSweep();
+
+  return (
+    <View
+      accessible
+      accessibilityLabel="Pulling their latest numbers"
+      accessibilityRole="progressbar"
+      style={styles.skeletonWrap}>
+      <Text style={styles.muted}>Pulling their latest numbers…</Text>
+      <View
+        style={styles.statsRow}
+        accessibilityElementsHidden
+        importantForAccessibility="no">
+        {Array.from({ length: 3 }, (_, i) => (
+          <SkeletonBlock key={i} progress={progress} style={styles.statSkeleton} />
+        ))}
+      </View>
+      <SkeletonBlock progress={progress} style={styles.blockSkeleton} />
+    </View>
   );
 }
 
@@ -180,7 +205,7 @@ function Stat({
 
 const makeStyles = (palette: AppPalette) =>
   StyleSheet.create({
-    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
+    backdrop: { flex: 1 },
     sheet: {
       backgroundColor: palette.bg,
       borderTopLeftRadius: Radius.lg,
@@ -210,7 +235,9 @@ const makeStyles = (palette: AppPalette) =>
     handle: { ...(Type.heading as TextStyle), color: palette.ink, fontWeight: '700' },
     muted: { ...(Type.body as TextStyle), color: palette.muted, fontSize: 13 },
     body: { gap: Spacing.lg, paddingBottom: Spacing.md },
-    loading: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xl },
+    skeletonWrap: { gap: Spacing.md },
+    statSkeleton: { flex: 1, height: 64, borderRadius: Radius.md },
+    blockSkeleton: { height: 56, borderRadius: Radius.md },
     statsRow: { flexDirection: 'row', gap: Spacing.md },
     stat: {
       flex: 1,

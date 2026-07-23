@@ -1,25 +1,15 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  Easing,
-  type SharedValue,
-} from 'react-native-reanimated';
 
+import { SkeletonBlock, useSkeletonSweep } from '@/components/skeleton';
 import { AppPalette, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme';
 
 const AVATAR = 44;
-const SWEEP_MS = 1200;
-/** Wider than any block so the highlight fully clears before it wraps. */
-const SWEEP_WIDTH = 160;
 
 /**
- * Loading state for the peers list.
+ * Loading state for the peers list, built on the shared skeleton primitives
+ * in components/skeleton.tsx.
  *
  * Deliberately shaped like `PeerCard` (44pt avatar, two text bars, a 32pt
  * action) rather than a spinner: the rows occupy exactly the space the real
@@ -33,15 +23,7 @@ export function PeerCardSkeleton({ count = 3 }: { count?: number }) {
 
   // One shared clock for every block, so the sweep reads as a single pass over
   // the list instead of each row shimmering out of step.
-  const progress = useSharedValue(0);
-  useEffect(() => {
-    progress.value = 0;
-    progress.value = withRepeat(
-      withTiming(1, { duration: SWEEP_MS, easing: Easing.inOut(Easing.quad) }),
-      -1,
-      false,
-    );
-  }, [progress]);
+  const progress = useSkeletonSweep();
 
   return (
     <View
@@ -55,47 +37,14 @@ export function PeerCardSkeleton({ count = 3 }: { count?: number }) {
           style={styles.card}
           accessibilityElementsHidden
           importantForAccessibility="no">
-          <Block progress={progress} styles={styles} style={styles.avatar} />
+          <SkeletonBlock progress={progress} style={styles.avatar} />
           <View style={styles.body}>
-            <Block progress={progress} styles={styles} style={styles.lineWide} />
-            <Block progress={progress} styles={styles} style={styles.lineNarrow} />
+            <SkeletonBlock progress={progress} style={styles.lineWide} />
+            <SkeletonBlock progress={progress} style={styles.lineNarrow} />
           </View>
-          <Block progress={progress} styles={styles} style={styles.action} />
+          <SkeletonBlock progress={progress} style={styles.action} />
         </View>
       ))}
-    </View>
-  );
-}
-
-/** One grey block with a highlight sweeping left to right across it. */
-function Block({
-  progress,
-  styles,
-  style,
-}: {
-  progress: SharedValue<number>;
-  styles: ReturnType<typeof makeStyles>;
-  style: object;
-}) {
-  'use no memo';
-  const { palette } = useTheme();
-
-  const sweep = useAnimatedStyle(() => ({
-    // Enters from the left and fully exits before the loop restarts, so there
-    // is no visible snap at the wrap point.
-    transform: [{ translateX: -SWEEP_WIDTH + progress.value * (SWEEP_WIDTH * 2.5) }],
-  }));
-
-  return (
-    <View style={[styles.block, style]}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.sweep, sweep]}>
-        <LinearGradient
-          colors={['transparent', palette.bg, 'transparent']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
     </View>
   );
 }
@@ -115,14 +64,6 @@ const makeStyles = (palette: AppPalette) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderRadius: Radius.md,
       padding: Spacing.md,
-    },
-    block: {
-      backgroundColor: palette.line,
-      overflow: 'hidden',
-    },
-    sweep: {
-      width: SWEEP_WIDTH,
-      opacity: 0.55,
     },
     avatar: {
       width: AVATAR,

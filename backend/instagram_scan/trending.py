@@ -1,19 +1,25 @@
-"""Global Instagram trending: one hashtag scrape, ranked into two lists.
+"""Global Instagram trending: one scrape per window, ranked into two lists.
 
 Trending is identical for every user, so this runs on a schedule and writes ONE
 shared row that every client reads. Nothing here is per-user, and the client
-never calls Apify: see supabase/migrations/0008_trending_cache.sql.
+never scrapes: see supabase/migrations/0008_trending_cache.sql.
 
-Reuses the same `apify/instagram-scraper` actor and the same APIFY_API_KEY as
-scraper.py. The only difference is the input: hashtag explore URLs instead of a
-profile URL.
+The source depends on SCRAPER_PROVIDER (see provider.py):
+  - scrapecreators (default): the dedicated trending-reels endpoint, which
+    returns Instagram's own public trending selection for 1 credit per refresh.
+  - apify: the original 10-hashtag explore scrape below, reusing the same
+    `apify/instagram-scraper` actor and APIFY_API_KEY as scraper.py.
 """
 
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 from apify_client import ApifyClient
 from supabase import Client, create_client
+
+import provider
+import scrapecreators
 
 # --- The single swap point -------------------------------------------------
 # Generic high-volume tags, deliberately not niche-specific: the MVP shows ONE
@@ -240,15 +246,32 @@ def write_batch(posts: list[dict], now: datetime) -> None:
 def refresh() -> int:
     """Scrape, rank and store one batch. Returns the number of posts stored.
 
-    Fully blocking (Apify HTTP plus two Supabase calls). Callers run it off the
-    event loop, the way main.py already does for /scan.
+    Fully blocking (scrape HTTP plus two Supabase calls). Callers run it off
+    the event loop, the way main.py already does for /scan.
     """
-    api_key = os.getenv("APIFY_API_KEY")
-    if not api_key:
-        raise RuntimeError("APIFY_API_KEY not configured.")
-
+    started = time.monotonic()
+    name = provider.provider_name()
     now = datetime.now(timezone.utc)
-    posts = normalize(fetch_hashtag_posts(api_key), now)
+
+    if name == "scrapecreators":
+        api_key = os.getenv("SCRAPECREATORS_API_KEY")
+        if not api_key:
+            raise RuntimeError("SCRAPECREATORS_API_KEY not configured.")
+        raw = scrapecreators.fetch_trending_reels(api_key)
+    else:
+        api_key = os.getenv("APIFY_API_KEY")
+        if not api_key:
+            raise RuntimeError("APIFY_API_KEY not configured.")
+        raw = fetch_hashtag_posts(api_key)
+
+    posts = normalize(raw, now)
+    # raw vs normalized shows how much the dedupe and the timestamp guard ate,
+    # which is the reliability half of the provider comparison.
+    print(
+        f"[trending] provider={name} raw={len(raw)} normalized={len(posts)}"
+        f" elapsed={time.monotonic() - started:.1f}s",
+        flush=True,
+    )
     # An empty scrape is a failed scrape. Storing it would blank the panel for
     # everyone and reset the 6h window, so leave the previous batch in place.
     if not posts:

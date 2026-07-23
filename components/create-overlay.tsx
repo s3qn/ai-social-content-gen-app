@@ -15,6 +15,7 @@ import Animated, {
   cancelAnimation,
   Easing,
   runOnJS,
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -37,6 +38,13 @@ import { useTheme } from '@/contexts/theme';
 // color and ONE typeface (Poppins).
 
 const FONT_FAMILY = 'Poppins_600SemiBold';
+
+// iOS refuses to alpha-fade a UIVisualEffectView: at any alpha below 1 the
+// effect collapses into a flat dark layer, which reads as a black flash while
+// the overlay closes. So the blur backdrop fades by INTENSITY, never by
+// opacity, via this animated wrapper.
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const BLUR_INTENSITY = 48;
 
 const OPTIONS = [
   { id: 'post', emoji: '🖼️', label: 'Post' },
@@ -76,7 +84,7 @@ const CLOSE_MS = 320;
 const BTN_MS = 380;
 const BTN_STAGGER_MS = 90;
 const BTN_LEAD_MS = 120;
-const HIDDEN_SCALE = 0.8; // scrim + stack scale in from / out to this
+const HIDDEN_SCALE = 0.8; // button stack scales in from / out to this
 
 export function CreateOverlay() {
   'use no memo';
@@ -165,11 +173,18 @@ export function CreateOverlay() {
     });
   }
 
-  // Master fade + scale drives the scrim AND the button stack together (scale in/out).
+  // Master fade + scale drives the button stack (scale in/out).
   const containerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
+  // The blur backdrop follows the same master progress but through intensity
+  // (see AnimatedBlurView note above). The solid fallback is a plain view, so
+  // an alpha fade is safe there.
+  const blurProps = useAnimatedProps(() => ({
+    intensity: BLUR_INTENSITY * opacity.value,
+  }));
+  const solidStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   // Per-button staggered fade, layered over the master scale.
   const s0 = useAnimatedStyle(() => ({ opacity: b0.value }));
   const s1 = useAnimatedStyle(() => ({ opacity: b1.value }));
@@ -183,7 +198,7 @@ export function CreateOverlay() {
   const stackWidth = Math.min(width * 0.84, 420);
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, containerStyle]}>
+    <View style={StyleSheet.absoluteFill}>
       {/* Backdrop: tapping anywhere off a button dismisses. */}
       <Pressable
         style={StyleSheet.absoluteFill}
@@ -191,16 +206,17 @@ export function CreateOverlay() {
         accessibilityLabel="Dismiss create menu"
         onPress={dismiss}>
         {useSolid ? (
-          <View
+          <Animated.View
             style={[
               StyleSheet.absoluteFill,
               { backgroundColor: isDark ? 'rgba(18,17,16,0.92)' : 'rgba(251,250,247,0.92)' },
+              solidStyle,
             ]}
           />
         ) : (
-          <BlurView
+          <AnimatedBlurView
             tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-            intensity={48}
+            animatedProps={blurProps}
             style={StyleSheet.absoluteFill}
           />
         )}
@@ -208,7 +224,7 @@ export function CreateOverlay() {
 
       {/* Centered vertical stack. box-none lets taps in the empty gaps fall
           through to the backdrop Pressable so they also dismiss. */}
-      <View style={styles.center} pointerEvents="box-none">
+      <Animated.View style={[styles.center, containerStyle]} pointerEvents="box-none">
         <View style={[styles.stack, { width: stackWidth }]}>
           <Text style={[styles.title, fontsLoaded ? { fontFamily: FONT_FAMILY } : null]}>
             Create Content
@@ -250,8 +266,8 @@ export function CreateOverlay() {
             </Animated.View>
           ))}
         </View>
-      </View>
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 }
 

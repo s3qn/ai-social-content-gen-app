@@ -2,6 +2,9 @@ fastapi>=0.110,<1.0
 uvicorn[standard]>=0.29,<1.0
 apify-client>=1.6,<2.0
 python-dotenv>=1.0,<2.0
+# ScrapeCreators HTTP adapter (scrapecreators.py). Already pulled in by
+# supabase; pinned here because we import it directly.
+httpx>=0.27,<1.0
 # Service-role writes to the global trending cache (trending.py). Server side
 # only: the Expo app talks to Supabase with the anon key and is denied writes.
 supabase>=2.0,<3.0
