@@ -7,7 +7,8 @@ import {
   SettingsGear,
   ThemedScreen,
 } from '@/components/themed-screen';
-import { GLOBAL_TRENDS, RELATED } from '@/constants/mock-screens';
+import { TrendingPanel } from '@/components/trending-panel';
+import { RELATED } from '@/constants/mock-screens';
 
 // The Trends tab belongs to Spark (yellow: Momentum).
 export default function ReelScreen() {
@@ -20,10 +21,9 @@ export default function ReelScreen() {
           <SettingsGear />
         </>
       }>
-      <SectionHeading>GLOBAL TRENDS</SectionHeading>
-      {GLOBAL_TRENDS.map((id) => (
-        <PlaceholderCard key={id} height={72} />
-      ))}
+      {/* Renders its own GLOBAL TRENDS heading, plus the Biggest/Rising tabs.
+          Reads the shared trending cache only: it never triggers a scrape. */}
+      <TrendingPanel />
 
       <SectionHeading>RELATED TO YOU</SectionHeading>
       {RELATED.map((id) => (

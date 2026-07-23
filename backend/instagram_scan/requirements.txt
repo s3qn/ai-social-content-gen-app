@@ -2,6 +2,9 @@ fastapi>=0.110,<1.0
 uvicorn[standard]>=0.29,<1.0
 apify-client>=1.6,<2.0
 python-dotenv>=1.0,<2.0
+# Service-role writes to the global trending cache (trending.py). Server side
+# only: the Expo app talks to Supabase with the anon key and is denied writes.
+supabase>=2.0,<3.0
 # Unused in P1 (deterministic analysis only), included for the F3 Claude
 # Content-DNA step so the env doesn't need rebuilding later.
 anthropic>=0.40

@@ -34,6 +34,15 @@ Send {"handles": [...]} instead to skip the LLM and only verify (that is the
 path for a handle the user typed in). An empty `suggestions` list is a normal
 200: the app turns it into its "add your own" fallback.
 
+POST /scan/trending/refresh  {} -> 202 {"status": "refreshing"|"already_refreshing"}
+
+Refreshes the GLOBAL trending cache (supabase trending_batches) if it is older
+than the 6h window, and returns immediately: the scrape runs in the background
+because no client waits on it. Trending is the same for every user, so this is
+scraped once and read by everybody, and concurrent calls collapse to a single
+Apify run. The app only ever READS the cache; it calls this at most to say "that
+batch looks old". Writes use the service role, so no client can poison the cache.
+
 `dna` / `score` come from analyze.ai_content_dna(). That call is best-effort:
 if the Anthropic key is missing or the call fails, both stay null and the real
 Apify-derived stats are returned as normal. The scan never fails on AI.
@@ -45,6 +54,7 @@ Security:
   - Typed JSON errors, never a stack trace.
 """
 
+import asyncio
 import hmac
 import os
 import re
@@ -58,6 +68,10 @@ from starlette.concurrency import run_in_threadpool
 from analyze import ai_content_dna, engagement_by_type, post_type_breakdown, top_posts
 from peers import classify_account_niche, suggest_peer_handles
 from scraper import fetch_posts, fetch_profile, fetch_profiles, load_apify_api_key
+
+# Imported as a module, not by name: the call sites below read better as
+# trending.refresh() / trending.cache_is_fresh() than as bare verbs.
+import trending
 
 load_dotenv(find_dotenv())
 
@@ -434,6 +448,57 @@ async def peers_classify(
         raise ScanError(502, "classify_error", "Niche classification failed.")
     # Nulls are a valid 200: the app falls back to the onboarding niche.
     return JSONResponse(status_code=200, content=result)
+
+
+# --- Global trending -------------------------------------------------------
+# Trending is identical for every user, so it is scraped ONCE per window into the
+# shared trending_batches cache (0008) and read by everybody. The app never
+# triggers a scrape directly: it reads the cache, and only pings this endpoint
+# when the cached batch is past its window.
+#
+# SINGLE-FLIGHT, and this is the whole cost argument for the feature. uvicorn
+# runs this app in ONE process (run.sh passes no --workers), so a module-level
+# asyncio.Lock genuinely serialises every concurrent refresh in the service.
+# Without it, N users opening the tab against a stale cache would each start an
+# Apify run for identical global data.
+_trending_lock = asyncio.Lock()
+
+# asyncio only holds a WEAK reference to a running task, so a fire-and-forget
+# task can be garbage collected mid-scrape. Holding it here keeps it alive.
+_trending_task: asyncio.Task | None = None
+
+
+async def _refresh_trending_if_stale() -> None:
+    async with _trending_lock:
+        try:
+            # Re-checked INSIDE the lock on purpose: a caller that queued behind
+            # a running scrape must see the batch that scrape just wrote and do
+            # nothing, rather than immediately scrape the same data again.
+            if await run_in_threadpool(trending.cache_is_fresh):
+                return
+            await run_in_threadpool(trending.refresh)
+        except Exception:
+            # Nothing awaits this task. A failed refresh simply leaves the
+            # previous batch in place until the next tab open tries again, which
+            # is the right outcome: stale trending beats no trending.
+            pass
+
+
+# Mounted under /scan for the same ingress reason as the peers endpoints.
+@app.post("/scan/trending/refresh")
+async def trending_refresh(
+    authorization: str | None = Header(default=None),
+) -> JSONResponse:
+    _check_auth(authorization)
+    global _trending_task
+    # Fast path so a burst of tab opens does not queue N coroutines behind the
+    # lock. The lock plus the freshness re-check above is what actually
+    # guarantees one scrape; this only stops the pile-up.
+    if _trending_lock.locked():
+        return JSONResponse(status_code=202, content={"status": "already_refreshing"})
+    # Fire and forget: the scrape runs 30-90s and no client waits on it.
+    _trending_task = asyncio.create_task(_refresh_trending_if_stale())
+    return JSONResponse(status_code=202, content={"status": "refreshing"})
 
 
 @app.get("/health")
